@@ -1,0 +1,20 @@
+app = "talent-discovery-widget"
+primary_region = "hkg"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8765"
+
+[[services]]
+  protocol = "tcp"
+  internal_port = 8765
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]

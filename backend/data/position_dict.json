@@ -1,0 +1,858 @@
+[
+  {
+    "name": "DevOps工程师",
+    "typical_departments": [
+      "产品设计部",
+      "制造部",
+      "品质部",
+      "市场部",
+      "项目管理部"
+    ],
+    "typical_levels": [
+      "M4",
+      "P4",
+      "T7"
+    ],
+    "common_skills": [
+      "C++",
+      "Docker",
+      "Excel",
+      "Java",
+      "JavaScript",
+      "MySQL",
+      "PPT",
+      "Python",
+      "Spring",
+      "Vue"
+    ],
+    "requirements": "熟悉C++,Docker,Excel,Java,JavaScript等技能",
+    "description": "DevOps工程师岗位，主要负责相关领域的工作"
+  },
+  {
+    "name": "QC",
+    "typical_departments": [
+      "产品设计部",
+      "人力资源部",
+      "品质部",
+      "技术中心",
+      "项目管理部"
+    ],
+    "typical_levels": [
+      "M6",
+      "T5",
+      "T7",
+      "T9"
+    ],
+    "common_skills": [
+      "C++",
+      "Docker",
+      "Java",
+      "JavaScript",
+      "MySQL",
+      "PPT",
+      "PostgreSQL",
+      "React",
+      "Spring",
+      "产品经理"
+    ],
+    "requirements": "熟悉C++,Docker,Java,JavaScript,MySQL等技能",
+    "description": "QC岗位，主要负责相关领域的工作"
+  },
+  {
+    "name": "QE",
+    "typical_departments": [
+      "产品设计部",
+      "人力资源部",
+      "制造部",
+      "品质部",
+      "市场部"
+    ],
+    "typical_levels": [
+      "M3",
+      "M4",
+      "T7",
+      "T9"
+    ],
+    "common_skills": [
+      "Docker",
+      "Excel",
+      "JavaScript",
+      "PPT",
+      "Python",
+      "React",
+      "Spring",
+      "Vue",
+      "创新",
+      "工艺工程师"
+    ],
+    "requirements": "熟悉Docker,Excel,JavaScript,PPT,Python等技能",
+    "description": "QE岗位，主要负责相关领域的工作"
+  },
+  {
+    "name": "SQE",
+    "typical_departments": [
+      "供应链管理部",
+      "品质部",
+      "财务部",
+      "项目管理部"
+    ],
+    "typical_levels": [
+      "M4",
+      "P5",
+      "P7",
+      "T6"
+    ],
+    "common_skills": [
+      "C++",
+      "Docker",
+      "Java",
+      "Kubernetes",
+      "MySQL",
+      "PPT",
+      "PostgreSQL",
+      "Python",
+      "React",
+      "Vue"
+    ],
+    "requirements": "熟悉C++,Docker,Java,Kubernetes,MySQL等技能",
+    "description": "SQE岗位，主要负责相关领域的工作"
+  },
+  {
+    "name": "产品经理",
+    "typical_departments": [
+      "产品设计部",
+      "市场部",
+      "研发部",
+      "财务部"
+    ],
+    "typical_levels": [
+      "M5",
+      "P5",
+      "T5",
+      "T8"
+    ],
+    "common_skills": [
+      "Docker",
+      "Excel",
+      "Java",
+      "JavaScript",
+      "MySQL",
+      "PPT",
+      "PostgreSQL",
+      "React",
+      "Spring",
+      "Vue"
+    ],
+    "requirements": "熟悉Docker,Excel,Java,JavaScript,MySQL等技能",
+    "description": "产品经理岗位，主要负责相关领域的工作"
+  },
+  {
+    "name": "仓管",
+    "typical_departments": [
+      "人力资源部",
+      "制造部",
+      "技术中心"
+    ],
+    "typical_levels": [
+      "P5",
+      "P6",
+      "T5",
+      "T6",
+      "T7"
+    ],
+    "common_skills": [
+      "C++",
+      "Excel",
+      "Java",
+      "JavaScript",
+      "MySQL",
+      "Python",
+      "React",
+      "Spring",
+      "产品经理",
+      "创新"
+    ],
+    "requirements": "熟悉C++,Excel,Java,JavaScript,MySQL等技能",
+    "description": "仓管岗位，主要负责相关领域的工作"
+  },
+  {
+    "name": "会计",
+    "typical_departments": [
+      "产品设计部",
+      "制造部",
+      "品质部",
+      "财务部"
+    ],
+    "typical_levels": [
+      "M4",
+      "P6",
+      "T4",
+      "T7",
+      "T8"
+    ],
+    "common_skills": [
+      "C++",
+      "Docker",
+      "Java",
+      "JavaScript",
+      "Kubernetes",
+      "MySQL",
+      "PPT",
+      "Spring",
+      "产品经理",
+      "创新"
+    ],
+    "requirements": "熟悉C++,Docker,Java,JavaScript,Kubernetes等技能",
+    "description": "会计岗位，主要负责相关领域的工作"
+  },
+  {
+    "name": "出纳",
+    "typical_departments": [
+      "供应链管理部",
+      "品质部",
+      "项目管理部"
+    ],
+    "typical_levels": [
+      "M5",
+      "P3",
+      "P5",
+      "T5",
+      "T7"
+    ],
+    "common_skills": [
+      "C++",
+      "Docker",
+      "Excel",
+      "Java",
+      "JavaScript",
+      "Kubernetes",
+      "PostgreSQL",
+      "Python",
+      "React",
+      "Spring"
+    ],
+    "requirements": "熟悉C++,Docker,Excel,Java,JavaScript等技能",
+    "description": "出纳岗位，主要负责相关领域的工作"
+  },
+  {
+    "name": "品牌经理",
+    "typical_departments": [
+      "人力资源部",
+      "品质部",
+      "技术中心",
+      "研发部",
+      "项目管理部"
+    ],
+    "typical_levels": [
+      "M3",
+      "M4",
+      "P7",
+      "T4"
+    ],
+    "common_skills": [
+      "C++",
+      "Docker",
+      "Excel",
+      "JavaScript",
+      "Kubernetes",
+      "MySQL",
+      "PPT",
+      "PostgreSQL",
+      "Python",
+      "React"
+    ],
+    "requirements": "熟悉C++,Docker,Excel,JavaScript,Kubernetes等技能",
+    "description": "品牌经理岗位，主要负责相关领域的工作"
+  },
+  {
+    "name": "培训专员",
+    "typical_departments": [
+      "产品设计部",
+      "人力资源部",
+      "制造部"
+    ],
+    "typical_levels": [
+      "P4",
+      "P6",
+      "T3",
+      "T5",
+      "T8"
+    ],
+    "common_skills": [
+      "C++",
+      "Docker",
+      "Excel",
+      "Java",
+      "JavaScript",
+      "Kubernetes",
+      "MySQL",
+      "PPT",
+      "Python",
+      "React"
+    ],
+    "requirements": "熟悉C++,Docker,Excel,Java,JavaScript等技能",
+    "description": "培训专员岗位，主要负责相关领域的工作"
+  },
+  {
+    "name": "审计",
+    "typical_departments": [
+      "产品设计部",
+      "供应链管理部",
+      "制造部",
+      "市场部",
+      "研发部"
+    ],
+    "typical_levels": [
+      "M3",
+      "P4",
+      "P5",
+      "T4"
+    ],
+    "common_skills": [
+      "C++",
+      "Java",
+      "JavaScript",
+      "Kubernetes",
+      "MySQL",
+      "PPT",
+      "PostgreSQL",
+      "Python",
+      "Spring",
+      "Vue"
+    ],
+    "requirements": "熟悉C++,Java,JavaScript,Kubernetes,MySQL等技能",
+    "description": "审计岗位，主要负责相关领域的工作"
+  },
+  {
+    "name": "客户经理",
+    "typical_departments": [
+      "市场部",
+      "技术中心",
+      "财务部",
+      "项目管理部"
+    ],
+    "typical_levels": [
+      "M4",
+      "P4",
+      "P7",
+      "T3",
+      "T8"
+    ],
+    "common_skills": [
+      "Excel",
+      "Java",
+      "Kubernetes",
+      "PPT",
+      "PostgreSQL",
+      "Python",
+      "React",
+      "Spring",
+      "Vue",
+      "产品经理"
+    ],
+    "requirements": "熟悉Excel,Java,Kubernetes,PPT,PostgreSQL等技能",
+    "description": "客户经理岗位，主要负责相关领域的工作"
+  },
+  {
+    "name": "工艺工程师",
+    "typical_departments": [
+      "制造部",
+      "市场部",
+      "研发部"
+    ],
+    "typical_levels": [
+      "P3",
+      "P5",
+      "T4",
+      "T5"
+    ],
+    "common_skills": [
+      "C++",
+      "Excel",
+      "Java",
+      "JavaScript",
+      "Kubernetes",
+      "MySQL",
+      "PPT",
+      "Python",
+      "React",
+      "Vue"
+    ],
+    "requirements": "熟悉C++,Excel,Java,JavaScript,Kubernetes等技能",
+    "description": "工艺工程师岗位，主要负责相关领域的工作"
+  },
+  {
+    "name": "市场专员",
+    "typical_departments": [
+      "供应链管理部",
+      "制造部",
+      "品质部",
+      "财务部"
+    ],
+    "typical_levels": [
+      "M4",
+      "M6",
+      "P7",
+      "T3"
+    ],
+    "common_skills": [
+      "Excel",
+      "JavaScript",
+      "Kubernetes",
+      "MySQL",
+      "PPT",
+      "PostgreSQL",
+      "React",
+      "产品经理",
+      "创新",
+      "工艺工程师"
+    ],
+    "requirements": "熟悉Excel,JavaScript,Kubernetes,MySQL,PPT等技能",
+    "description": "市场专员岗位，主要负责相关领域的工作"
+  },
+  {
+    "name": "招聘专员",
+    "typical_departments": [
+      "人力资源部",
+      "制造部",
+      "市场部",
+      "技术中心"
+    ],
+    "typical_levels": [
+      "M5",
+      "P5",
+      "T7"
+    ],
+    "common_skills": [
+      "C++",
+      "Docker",
+      "Java",
+      "JavaScript",
+      "Kubernetes",
+      "PPT",
+      "PostgreSQL",
+      "Python",
+      "React",
+      "Spring"
+    ],
+    "requirements": "熟悉C++,Docker,Java,JavaScript,Kubernetes等技能",
+    "description": "招聘专员岗位，主要负责相关领域的工作"
+  },
+  {
+    "name": "测试工程师",
+    "typical_departments": [
+      "产品设计部",
+      "制造部",
+      "技术中心",
+      "研发部"
+    ],
+    "typical_levels": [
+      "M3",
+      "P5",
+      "T3",
+      "T6",
+      "T8"
+    ],
+    "common_skills": [
+      "C++",
+      "Docker",
+      "Java",
+      "JavaScript",
+      "React",
+      "Spring",
+      "Vue",
+      "产品经理",
+      "创新",
+      "工艺工程师"
+    ],
+    "requirements": "熟悉C++,Docker,Java,JavaScript,React等技能",
+    "description": "测试工程师岗位，主要负责相关领域的工作"
+  },
+  {
+    "name": "物流专员",
+    "typical_departments": [
+      "产品设计部",
+      "研发部",
+      "财务部",
+      "项目管理部"
+    ],
+    "typical_levels": [
+      "P3",
+      "P7",
+      "T3",
+      "T5"
+    ],
+    "common_skills": [
+      "C++",
+      "Docker",
+      "Excel",
+      "Java",
+      "JavaScript",
+      "Kubernetes",
+      "MySQL",
+      "PPT",
+      "PostgreSQL",
+      "React"
+    ],
+    "requirements": "熟悉C++,Docker,Excel,Java,JavaScript等技能",
+    "description": "物流专员岗位，主要负责相关领域的工作"
+  },
+  {
+    "name": "生产主管",
+    "typical_departments": [
+      "人力资源部",
+      "供应链管理部",
+      "制造部",
+      "研发部"
+    ],
+    "typical_levels": [
+      "M5",
+      "P5",
+      "T4",
+      "T6",
+      "T7"
+    ],
+    "common_skills": [
+      "C++",
+      "Docker",
+      "Excel",
+      "JavaScript",
+      "Kubernetes",
+      "PostgreSQL",
+      "Python",
+      "Spring",
+      "Vue",
+      "产品经理"
+    ],
+    "requirements": "熟悉C++,Docker,Excel,JavaScript,Kubernetes等技能",
+    "description": "生产主管岗位，主要负责相关领域的工作"
+  },
+  {
+    "name": "硬件工程师",
+    "typical_departments": [
+      "人力资源部",
+      "品质部",
+      "研发部",
+      "项目管理部"
+    ],
+    "typical_levels": [
+      "M3",
+      "M4",
+      "M5",
+      "P3",
+      "T5"
+    ],
+    "common_skills": [
+      "Java",
+      "JavaScript",
+      "Kubernetes",
+      "MySQL",
+      "PostgreSQL",
+      "Python",
+      "React",
+      "Spring",
+      "产品经理",
+      "创新"
+    ],
+    "requirements": "熟悉Java,JavaScript,Kubernetes,MySQL,PostgreSQL等技能",
+    "description": "硬件工程师岗位，主要负责相关领域的工作"
+  },
+  {
+    "name": "算法工程师",
+    "typical_departments": [
+      "人力资源部",
+      "供应链管理部",
+      "品质部",
+      "研发部"
+    ],
+    "typical_levels": [
+      "M5",
+      "M6",
+      "P3",
+      "T5",
+      "T6"
+    ],
+    "common_skills": [
+      "C++",
+      "Excel",
+      "Java",
+      "JavaScript",
+      "Kubernetes",
+      "MySQL",
+      "PostgreSQL",
+      "React",
+      "Spring",
+      "产品经理"
+    ],
+    "requirements": "熟悉C++,Excel,Java,JavaScript,Kubernetes等技能",
+    "description": "算法工程师岗位，主要负责相关领域的工作"
+  },
+  {
+    "name": "薪酬专员",
+    "typical_departments": [
+      "制造部",
+      "品质部",
+      "财务部",
+      "项目管理部"
+    ],
+    "typical_levels": [
+      "M3",
+      "P4",
+      "P6",
+      "P7",
+      "T4"
+    ],
+    "common_skills": [
+      "C++",
+      "Docker",
+      "Excel",
+      "Java",
+      "MySQL",
+      "PPT",
+      "PostgreSQL",
+      "Python",
+      "React",
+      "Spring"
+    ],
+    "requirements": "熟悉C++,Docker,Excel,Java,MySQL等技能",
+    "description": "薪酬专员岗位，主要负责相关领域的工作"
+  },
+  {
+    "name": "计划专员",
+    "typical_departments": [
+      "制造部",
+      "技术中心",
+      "财务部",
+      "项目管理部"
+    ],
+    "typical_levels": [
+      "M4",
+      "P5",
+      "T5",
+      "T6",
+      "T7"
+    ],
+    "common_skills": [
+      "Docker",
+      "Excel",
+      "JavaScript",
+      "Kubernetes",
+      "MySQL",
+      "PPT",
+      "PostgreSQL",
+      "React",
+      "Spring",
+      "Vue"
+    ],
+    "requirements": "熟悉Docker,Excel,JavaScript,Kubernetes,MySQL等技能",
+    "description": "计划专员岗位，主要负责相关领域的工作"
+  },
+  {
+    "name": "设备工程师",
+    "typical_departments": [
+      "制造部",
+      "品质部",
+      "市场部",
+      "技术中心"
+    ],
+    "typical_levels": [
+      "M5",
+      "P5",
+      "P7",
+      "T4"
+    ],
+    "common_skills": [
+      "Java",
+      "Kubernetes",
+      "PostgreSQL",
+      "Python",
+      "React",
+      "Vue",
+      "产品经理",
+      "创新",
+      "工艺工程师",
+      "机器学习"
+    ],
+    "requirements": "熟悉Java,Kubernetes,PostgreSQL,Python,React等技能",
+    "description": "设备工程师岗位，主要负责相关领域的工作"
+  },
+  {
+    "name": "财务分析师",
+    "typical_departments": [
+      "产品设计部",
+      "市场部",
+      "技术中心",
+      "项目管理部"
+    ],
+    "typical_levels": [
+      "M6",
+      "P4",
+      "P7",
+      "T6"
+    ],
+    "common_skills": [
+      "C++",
+      "Docker",
+      "Java",
+      "JavaScript",
+      "Kubernetes",
+      "MySQL",
+      "PostgreSQL",
+      "Python",
+      "React",
+      "Vue"
+    ],
+    "requirements": "熟悉C++,Docker,Java,JavaScript,Kubernetes等技能",
+    "description": "财务分析师岗位，主要负责相关领域的工作"
+  },
+  {
+    "name": "财务经理",
+    "typical_departments": [
+      "人力资源部",
+      "技术中心",
+      "研发部",
+      "财务部",
+      "项目管理部"
+    ],
+    "typical_levels": [
+      "M3",
+      "M6",
+      "T4",
+      "T5",
+      "T7"
+    ],
+    "common_skills": [
+      "C++",
+      "Docker",
+      "Excel",
+      "Java",
+      "JavaScript",
+      "Kubernetes",
+      "MySQL",
+      "PPT",
+      "PostgreSQL",
+      "Python"
+    ],
+    "requirements": "熟悉C++,Docker,Excel,Java,JavaScript等技能",
+    "description": "财务经理岗位，主要负责相关领域的工作"
+  },
+  {
+    "name": "软件工程师",
+    "typical_departments": [
+      "产品设计部",
+      "人力资源部",
+      "品质部",
+      "市场部",
+      "技术中心"
+    ],
+    "typical_levels": [
+      "M3",
+      "M4",
+      "M6",
+      "P6",
+      "T8"
+    ],
+    "common_skills": [
+      "C++",
+      "Docker",
+      "Java",
+      "JavaScript",
+      "Kubernetes",
+      "MySQL",
+      "PPT",
+      "React",
+      "Spring",
+      "Vue"
+    ],
+    "requirements": "熟悉C++,Docker,Java,JavaScript,Kubernetes等技能",
+    "description": "软件工程师岗位，主要负责相关领域的工作"
+  },
+  {
+    "name": "采购专员",
+    "typical_departments": [
+      "产品设计部",
+      "供应链管理部",
+      "制造部",
+      "市场部"
+    ],
+    "typical_levels": [
+      "M5",
+      "M6",
+      "T5",
+      "T8",
+      "T9"
+    ],
+    "common_skills": [
+      "Docker",
+      "Java",
+      "JavaScript",
+      "Kubernetes",
+      "MySQL",
+      "PPT",
+      "PostgreSQL",
+      "React",
+      "Spring",
+      "产品经理"
+    ],
+    "requirements": "熟悉Docker,Java,JavaScript,Kubernetes,MySQL等技能",
+    "description": "采购专员岗位，主要负责相关领域的工作"
+  },
+  {
+    "name": "销售经理",
+    "typical_departments": [
+      "人力资源部",
+      "供应链管理部",
+      "制造部",
+      "财务部"
+    ],
+    "typical_levels": [
+      "M4",
+      "M5",
+      "M6",
+      "T3"
+    ],
+    "common_skills": [
+      "C++",
+      "Docker",
+      "Java",
+      "JavaScript",
+      "Kubernetes",
+      "MySQL",
+      "PPT",
+      "PostgreSQL",
+      "Python",
+      "React"
+    ],
+    "requirements": "熟悉C++,Docker,Java,JavaScript,Kubernetes等技能",
+    "description": "销售经理岗位，主要负责相关领域的工作"
+  },
+  {
+    "name": "项目经理",
+    "typical_departments": [
+      "产品设计部",
+      "人力资源部",
+      "技术中心",
+      "财务部"
+    ],
+    "typical_levels": [
+      "M5",
+      "P5",
+      "P7",
+      "T9"
+    ],
+    "common_skills": [
+      "Docker",
+      "Excel",
+      "Java",
+      "Kubernetes",
+      "MySQL",
+      "PPT",
+      "PostgreSQL",
+      "Python",
+      "React",
+      "Vue"
+    ],
+    "requirements": "熟悉Docker,Excel,Java,Kubernetes,MySQL等技能",
+    "description": "项目经理岗位，主要负责相关领域的工作"
+  }
+]
