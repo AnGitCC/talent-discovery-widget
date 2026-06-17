@@ -233,25 +233,29 @@ class BailianBackend:
 
     def embed(self, texts: list[str]) -> list[list[float]]:
         import httpx
+        from concurrent.futures import ThreadPoolExecutor
         if not self.api_key:
             raise ValueError("BAILIAN_API_KEY not set.")
 
-        vectors = []
-        # text-embedding-v3: max batch size is 10
-        for i in range(0, len(texts), 10):
+        # text-embedding-v3/v4: max batch size is 10
+        BATCH = 10
+        batches = [texts[i:i+BATCH] for i in range(0, len(texts), BATCH)]
+
+        def _fetch(batch):
             resp = httpx.post(
                 f"{self.base_url}/embeddings",
                 headers={"Authorization": f"Bearer {self.api_key}"},
-                json={
-                    "model": self.embed_model,
-                    "input": texts[i:i+25],
-                },
+                json={"model": self.embed_model, "input": batch, "dimensions": 256},
                 timeout=120,
             )
             resp.raise_for_status()
-            data = resp.json()
-            for item in data.get("data", []):
-                vectors.append(item["embedding"])
+            return [item["embedding"] for item in resp.json()["data"]]
+
+        # 8 concurrent requests — fast enough for hundreds~thousands of records
+        vectors = []
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            for result in pool.map(_fetch, batches):
+                vectors.extend(result)
         return vectors
 
 

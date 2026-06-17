@@ -22,7 +22,7 @@ AIHUB_MODEL = "Qwen3-VL-235B-A22B-Instruct"
 BAILIAN_API_KEY = ""   # always read from env, never hardcode
 BAILIAN_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 BAILIAN_CHAT_MODEL = "qwen3.7-plus"
-BAILIAN_EMBED_MODEL = "text-embedding-v3"
+BAILIAN_EMBED_MODEL = "text-embedding-v4"
 
 # Allow override via environment variables
 import os
