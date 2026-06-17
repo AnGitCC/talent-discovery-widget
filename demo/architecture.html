@@ -3,323 +3,468 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI 人才发现助手 — 语义搜索架构</title>
+<title>AI 人才发现助手 — 语义搜索引擎架构</title>
+<script src="https://cdn.tailwindcss.com"></script>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:Inter,-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(180deg,#0a0f1a 0%,#111827 100%);color:#e5e7eb;min-height:100vh;line-height:1.7}
-  .page{max-width:1100px;margin:0 auto;padding:60px 24px}
-
-  /* ── Hero ── */
-  .hero{text-align:center;margin-bottom:64px}
-  .hero .badge{display:inline-block;background:rgba(34,197,94,0.12);border:0.5px solid rgba(34,197,94,0.25);color:#22c55e;font-size:12px;font-weight:600;padding:4px 12px;border-radius:20px;letter-spacing:0.06em;margin-bottom:20px}
-  .hero h1{font-size:clamp(2rem,5vw,3rem);font-weight:700;color:#f9fafb;line-height:1.3;margin-bottom:16px}
-  .hero h1 span{background:linear-gradient(135deg,#22c55e,#4ade80);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-  .hero .sub{font-size:1.1rem;color:#9ca3af;max-width:600px;margin:0 auto 32px}
-  .hero .quick-stats{display:flex;gap:32px;justify-content:center;flex-wrap:wrap}
-  .hero .stat{text-align:center}
-  .hero .stat-val{font-size:2rem;font-weight:700;color:#22c55e;font-family:"SF Mono","JetBrains Mono",monospace}
-  .hero .stat-label{font-size:0.75rem;color:#6b7280;margin-top:4px;text-transform:uppercase;letter-spacing:0.08em}
-
-  /* ── Section Title ── */
-  .section-title{margin:56px 0 28px;text-align:center}
-  .section-title h2{font-size:1.5rem;font-weight:600;color:#f3f4f6;margin-bottom:8px}
-  .section-title p{font-size:0.875rem;color:#9ca3af}
-
-  /* ── Architecture Diagram ── */
-  .arch-diagram{display:flex;flex-direction:column;gap:0;background:linear-gradient(180deg,rgba(31,41,55,0.5),rgba(17,24,39,0.8));border:0.5px solid rgba(75,85,99,0.3);border-radius:16px;overflow:hidden;padding:28px 24px}
-  .arch-row{display:flex;align-items:center;gap:16px}
-  .arch-label{width:100px;flex-shrink:0;font-size:0.6875rem;color:#9ca3af;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;text-align:right}
-  .arch-content{flex:1;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
-  .arch-box{background:rgba(31,41,55,0.8);border:0.5px solid rgba(75,85,99,0.4);border-radius:10px;padding:12px 16px;font-size:0.8125rem;color:#d1d5db;white-space:nowrap}
-  .arch-box.highlight{border-color:rgba(34,197,94,0.4);background:rgba(34,197,94,0.08);color:#4ade80}
-  .arch-box.bold{font-weight:600;color:#f3f4f6}
-  .arch-arrow{color:#4b5563;font-size:1.2rem;flex-shrink:0}
-  .arch-divider{width:100%;border-top:0.5px solid rgba(75,85,99,0.2);margin:4px 0}
-
-  /* ── Pipeline Cards ── */
-  .pipeline{display:flex;gap:16px;flex-wrap:wrap}
-  .pipe-card{flex:1;min-width:280px;background:linear-gradient(180deg,rgba(31,41,55,0.6),rgba(31,41,55,0.3));border:0.5px solid rgba(75,85,99,0.25);border-radius:14px;padding:24px;position:relative;overflow:hidden}
-  .pipe-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px}
-  .pipe-card.l1::before{background:linear-gradient(90deg,#6b7280,#9ca3af)}
-  .pipe-card.l2::before{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
-  .pipe-card.l3::before{background:linear-gradient(90deg,#22c55e,#4ade80)}
-  .pipe-card .layer-tag{display:inline-block;font-size:0.625rem;font-weight:700;letter-spacing:0.1em;padding:2px 8px;border-radius:4px;margin-bottom:12px}
-  .pipe-card.l1 .layer-tag{background:rgba(107,114,128,0.2);color:#9ca3af}
-  .pipe-card.l2 .layer-tag{background:rgba(245,158,11,0.15);color:#fbbf24}
-  .pipe-card.l3 .layer-tag{background:rgba(34,197,94,0.15);color:#4ade80}
-  .pipe-card h3{font-size:1.1rem;font-weight:600;color:#f3f4f6;margin-bottom:8px}
-  .pipe-card .desc{font-size:0.8125rem;color:#9ca3af;margin-bottom:14px;line-height:1.6}
-  .pipe-card ul{list-style:none;font-size:0.8125rem;color:#d1d5db}
-  .pipe-card ul li{margin-bottom:6px;display:flex;align-items:flex-start;gap:6px}
-  .pipe-card ul li::before{content:"";width:5px;height:5px;border-radius:50%;flex-shrink:0;margin-top:7px}
-  .pipe-card.l1 ul li::before{background:#6b7280}
-  .pipe-card.l2 ul li::before{background:#f59e0b}
-  .pipe-card.l3 ul li::before{background:#22c55e}
-  .pipe-card .data-count{font-size:0.75rem;color:#6b7280;margin-top:12px;font-family:"SF Mono","JetBrains Mono",monospace}
-
-  /* ── Keyword + Vector Split ── */
-  .two-col{display:flex;gap:16px;flex-wrap:wrap;margin-top:20px}
-  .two-col > div{flex:1;min-width:280px;background:rgba(31,41,55,0.4);border:0.5px solid rgba(75,85,99,0.2);border-radius:12px;padding:20px}
-  .two-col h4{font-size:0.8125rem;font-weight:600;color:#f3f4f6;margin-bottom:10px;display:flex;align-items:center;gap:6px}
-  .two-col h4 .dot{width:8px;height:8px;border-radius:50%}
-  .two-col table{width:100%;font-size:0.75rem;border-collapse:collapse}
-  .two-col th{text-align:left;color:#6b7280;font-weight:500;font-size:0.6875rem;padding:4px 8px 4px 0}
-  .two-col td{color:#9ca3af;padding:4px 8px 4px 0}
-  .two-col .code{font-family:"SF Mono","JetBrains Mono",monospace;font-size:0.6875rem;color:#fbbf24}
-
-  /* ── Embedding Detail ── */
-  .embed-section{margin-top:20px;text-align:center}
-  .embed-visual{display:inline-flex;align-items:center;gap:20px;flex-wrap:wrap;justify-content:center;font-size:0.8125rem}
-  .embed-visual .emb{background:rgba(34,197,94,0.06);border:0.5px solid rgba(34,197,94,0.2);border-radius:10px;padding:10px 16px}
-  .embed-visual .emb .label{font-size:0.625rem;color:#9ca3af;margin-bottom:4px}
-  .embed-visual .emb .val{font-family:"SF Mono","JetBrains Mono",monospace;color:#4ade80;font-size:0.75rem}
-  .embed-visual .arr{color:#4b5563;font-size:1.2rem}
-  .flow-chart{margin-top:20px;background:rgba(31,41,55,0.4);border-radius:12px;padding:24px;overflow-x:auto}
-
-  /* ── Tech Badges ── */
-  .tech-stack{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:28px}
-  .tech{background:rgba(31,41,55,0.6);border:0.5px solid rgba(75,85,99,0.3);border-radius:8px;padding:8px 16px;font-size:0.8125rem;color:#d1d5db;display:flex;align-items:center;gap:6px}
-  .tech .t-dot{width:7px;height:7px;border-radius:50%}
-
-  /* ── Footer ── */
-  .footer{text-align:center;margin-top:64px;padding-top:32px;border-top:0.5px solid rgba(75,85,99,0.2)}
-  .footer p{font-size:0.75rem;color:#6b7280}
-  .footer a{color:#22c55e;text-decoration:none}
-
-  /* ── Responsive ── */
-  @media(max-width:768px){
-    .arch-label{display:none}
-    .arch-row{flex-direction:column;align-items:flex-start;gap:8px}
-    .pipeline{flex-direction:column}
-  }
+  html{scroll-behavior:smooth}
+  .fade-up{opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease}
+  .fade-up.visible{opacity:1;transform:translateY(0)}
+  .glass{backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+  .card-hover:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.06)}
+  .btn-hover:hover{transform:scale(1.02)}
+  .flow-line{position:relative}
+  .flow-line::after{content:'';position:absolute;left:50%;bottom:-2px;width:0;height:2px;background:linear-gradient(90deg,#22c55e,#4ade80);transition:width .3s ease;transform:translateX(-50%)}
+  .flow-line:hover::after{width:100%}
 </style>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', '"PingFang SC"', '"Microsoft YaHei"', 'sans-serif'] },
+      }
+    }
+  }
+</script>
 </head>
-<body>
-<div class="page">
+<body class="bg-white text-[#1d1d1f] antialiased">
 
-  <!-- Hero -->
-  <div class="hero">
-    <div class="badge">AI ARCHITECTURE</div>
-    <h1>AI 人才发现助手<br><span>语义搜索引擎架构</span></h1>
-    <p class="sub">从自然语言到精准人才匹配，三层流水线引擎驱动，关键词 + 向量 + LLM 协同工作</p>
-    <div class="quick-stats">
-      <div class="stat"><div class="stat-val">qwen3.7-plus</div><div class="stat-label">LLM 模型</div></div>
-      <div class="stat"><div class="stat-val">text-embedding-v4</div><div class="stat-label">嵌入模型</div></div>
-      <div class="stat"><div class="stat-val">256d</div><div class="stat-label">向量维度</div></div>
-      <div class="stat"><div class="stat-val">3 层</div><div class="stat-label">匹配流水线</div></div>
+<!-- ── Nav ── -->
+<nav id="nav" class="fixed top-0 left-0 right-0 z-50 glass bg-white/70 border-b border-[#f2f2f7]">
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-10 flex items-center justify-between h-14">
+    <div class="flex items-center gap-2">
+      <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#22c55e" opacity="0.15"/><path d="M12 2c-1.5 2-1.5 5 0 7 1.5-2 1.5-5 0-7zM12 22c-1.5-2-1.5-5 0-7 1.5 2 1.5 5 0 7zM2 12c2-1.5 5-1.5 7 0-2 1.5-5 1.5-7 0zM22 12c-2-1.5-5-1.5-7 0 2 1.5 5 1.5 7 0z" fill="#22c55e"/></svg>
+      <span class="font-semibold text-sm">AI Talent Discovery</span>
+    </div>
+    <div class="hidden md:flex items-center gap-8 text-xs font-medium text-[#86868b]">
+      <a href="#pipeline" class="hover:text-[#1d1d1f] transition-colors flow-line">搜索架构</a>
+      <a href="#layer2" class="hover:text-[#1d1d1f] transition-colors flow-line">语义引擎</a>
+      <a href="#flow" class="hover:text-[#1d1d1f] transition-colors flow-line">数据流</a>
+      <a href="#stack" class="hover:text-[#1d1d1f] transition-colors flow-line">技术栈</a>
+    </div>
+    <a href="https://talent-discovery-widget.onrender.com" class="text-xs font-medium px-4 py-2 bg-gradient-to-r from-[#22c55e] to-[#4ade80] text-white rounded-full transition duration-200 btn-hover">在线演示 →</a>
+  </div>
+</nav>
+
+<!-- ── Hero ── -->
+<section class="pt-32 pb-20 lg:pt-44 lg:pb-28">
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-10 text-center">
+    <p class="text-xs font-semibold tracking-[0.15em] uppercase text-[#22c55e] mb-6 fade-up">Semantic Search Architecture</p>
+    <h1 class="text-4xl lg:text-6xl xl:text-7xl font-extrabold tracking-tight text-[#1d1d1f] leading-[1.1] mb-6 fade-up">
+      AI 语义搜索引擎
+    </h1>
+    <p class="text-lg lg:text-xl text-[#86868b] max-w-2xl mx-auto leading-relaxed mb-10 fade-up">
+      从自然语言到精准人才匹配，三层流水线引擎协同工作<br class="hidden sm:block">关键词 + 向量 + LLM，像资深 HR 一样理解你的需求
+    </p>
+    <div class="flex items-center justify-center gap-8 text-sm fade-up">
+      <div class="text-center"><div class="text-3xl font-bold text-[#22c55e] tracking-tight">qwen3.7-plus</div><div class="text-xs text-[#86868b] mt-1">LLM 模型</div></div>
+      <div class="w-px h-10 bg-[#f2f2f7]"></div>
+      <div class="text-center"><div class="text-3xl font-bold text-[#22c55e] tracking-tight">text-embedding-v4</div><div class="text-xs text-[#86868b] mt-1">嵌入模型</div></div>
+      <div class="w-px h-10 bg-[#f2f2f7]"></div>
+      <div class="text-center"><div class="text-3xl font-bold text-[#22c55e] tracking-tight">256d</div><div class="text-xs text-[#86868b] mt-1">向量维度</div></div>
+      <div class="w-px h-10 bg-[#f2f2f7]"></div>
+      <div class="text-center"><div class="text-3xl font-bold text-[#22c55e] tracking-tight">3 层</div><div class="text-xs text-[#86868b] mt-1">匹配流水线</div></div>
     </div>
   </div>
+</section>
 
-  <!-- Pipeline Overview -->
-  <div class="section-title">
-    <h2>三层匹配流水线</h2>
-    <p>从粗到精，逐层筛选 — 11,000 候选人中精准定位最匹配的人才</p>
-  </div>
+<!-- ── Pipeline ── -->
+<section id="pipeline" class="py-20 lg:py-28 bg-[#fafafa]">
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-10">
+    <p class="text-xs font-semibold tracking-[0.15em] uppercase text-[#22c55e] mb-4 fade-up">Pipeline</p>
+    <h2 class="text-3xl lg:text-5xl font-bold tracking-tight text-[#1d1d1f] mb-4 fade-up">三层匹配流水线</h2>
+    <p class="text-[#86868b] text-base mb-14 max-w-xl fade-up">从粗到精，逐层筛选 — 无论候选人库有多大，总能精准定位最匹配的人才</p>
 
-  <div class="pipeline">
-    <div class="pipe-card l1">
-      <div class="layer-tag">LAYER 1</div>
-      <h3>规则过滤 · Rule Filter</h3>
-      <p class="desc">硬性条件筛选，纯规则引擎，零延迟</p>
-      <ul>
-        <li>学历、年龄、司龄、职级等硬性范围过滤</li>
-        <li>部门、岗位等精确匹配排除</li>
-        <li>绩效等级、证书等条件筛选</li>
-        <li>Pandas DataFrame 向量化执行</li>
-      </ul>
-      <div class="data-count">11,000 → ~8,000 人</div>
-    </div>
-
-    <div class="pipe-card l2">
-      <div class="layer-tag">LAYER 2</div>
-      <h3>关键词 + 向量混合 · Hybrid Search</h3>
-      <p class="desc">关键词精确匹配 + 语义向量相似度，双路并行融合</p>
-      <ul>
-        <li><strong>关键词：</strong>中文分词 + 字段加权打分（岗位×5.0）</li>
-        <li><strong>向量：</strong>Bailian text-embedding-v4 生成 256 维向量</li>
-        <li>关键词 Top50 + 向量 Top15 交叉补充</li>
-      </ul>
-      <div class="data-count">~8,000 → 100 人</div>
-    </div>
-
-    <div class="pipe-card l3">
-      <div class="layer-tag">LAYER 3</div>
-      <h3>LLM 精排 · LLM Rerank</h3>
-      <p class="desc">大模型阅读理解所有候选人与岗位需求，智能排序</p>
-      <ul>
-        <li>qwen3.7-plus 逐条理解候选人背景</li>
-        <li>输出排序 + 评分 + 推荐理由</li>
-        <li>模拟资深 HR 招聘主管的判断逻辑</li>
-      </ul>
-      <div class="data-count">100 → 最终 Top N 人</div>
-    </div>
-  </div>
-
-  <!-- Layer 2 Deep Dive -->
-  <div class="section-title">
-    <h2>Layer 2 详解：语义搜索的核心</h2>
-    <p>为什么搜"产品经理"能匹配到"产品负责人"？为什么搜"后端开发"不会漏掉"服务端工程师"？</p>
-  </div>
-
-  <div class="two-col">
-    <div>
-      <h4><span class="dot" style="background:#f59e0b"></span> 关键词匹配 · Keyword Search</h4>
-      <p style="font-size:0.75rem;color:#9ca3af;margin-bottom:12px">轻量基线，无 LLM 调用，响应即时</p>
-      <table>
-        <tr><th>搜索字段</th><th>权重</th><th>说明</th></tr>
-        <tr><td>岗位</td><td style="color:#fbbf24">5.0</td><td>最相关</td></tr>
-        <tr><td>技能标签</td><td style="color:#fbbf24">4.0</td><td>核心能力</td></tr>
-        <tr><td>证书</td><td style="color:#fbbf24">3.0</td><td>资质证明</td></tr>
-        <tr><td>所有标签</td><td style="color:#fbbf24">3.0</td><td>综合画像</td></tr>
-        <tr><td>工作领域</td><td style="color:#fbbf24">2.5</td><td></td></tr>
-        <tr><td>专业</td><td style="color:#fbbf24">2.0</td><td></td></tr>
-        <tr><td>部门</td><td style="color:#fbbf24">1.5</td><td></td></tr>
-        <tr><td>学历</td><td style="color:#fbbf24">1.0</td><td>参考</td></tr>
-      </table>
-      <div style="margin-top:12px;font-size:0.6875rem;color:#6b7280;line-height:1.6">
-        <strong>中文分词：</strong><br>
-        <span class="code">"产品经理" → ["产品经理", "产品", "品经", "经理"]</span><br>
-        字符串二元组（bigram）增强中文部分匹配能力
-      </div>
-    </div>
-    <div>
-      <h4><span class="dot" style="background:#22c55e"></span> 向量语义搜索 · Vector Semantic</h4>
-      <p style="font-size:0.75rem;color:#9ca3af;margin-bottom:12px">理解语义含义，不依赖精确字面匹配</p>
-
-      <div class="embed-visual" style="justify-content:flex-start;flex-direction:column;align-items:flex-start;gap:12px">
-        <div class="emb" style="width:100%;text-align:center">
-          <div class="label">用户查询</div>
-          <div class="val" style="font-size:0.8125rem">"高级产品经理"</div>
-          <div style="font-size:0.625rem;color:#6b7280;margin-top:4px">→ Bailian API → 256 维向量</div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <!-- Layer 1 -->
+      <div class="bg-white rounded-2xl p-8 transition-all duration-300 card-hover border border-[#f2f2f7] fade-up">
+        <div class="w-10 h-10 rounded-xl bg-[#f2f2f7] flex items-center justify-center mb-5">
+          <svg class="w-5 h-5 text-[#86868b]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         </div>
-        <div class="arr" style="text-align:center;width:100%">↓ cos 相似度 ↓</div>
-        <div style="font-size:0.75rem;color:#d1d5db;line-height:1.8">
-          <span style="color:#4ade80">0.89</span> G004222 马娟 · 产品经理<br>
-          <span style="color:#a3e635">0.82</span> G010956 吴杰 · 高级产品经理<br>
-          <span style="color:#a3e635">0.78</span> G003421 刘洋 · 产品负责人<br>
-          <span style="color:#fbbf24">0.65</span> G005678 张伟 · 项目经理<br>
-          <span style="color:#fbbf24">0.61</span> G007890 陈明 · 需求分析师
+        <p class="text-[10px] font-bold tracking-[0.12em] uppercase text-[#86868b] mb-3">Layer 1</p>
+        <h3 class="text-xl font-semibold text-[#1d1d1f] mb-3">规则过滤</h3>
+        <p class="text-sm text-[#86868b] leading-relaxed mb-6">硬性条件筛选，纯规则引擎，零延迟。学历、年龄、司龄、职级等范围过滤，Pandas 向量化执行。</p>
+        <div class="flex items-center gap-2 text-xs font-medium text-[#86868b]">
+          <span class="px-2.5 py-1 bg-[#fafafa] rounded-md">11,000</span>
+          <span>→</span>
+          <span class="px-2.5 py-1 bg-[#fafafa] rounded-md">~8,000</span>
+          <span class="ml-auto text-[#22c55e] font-semibold">×1</span>
         </div>
       </div>
 
-      <div style="margin-top:16px;padding:12px;background:rgba(34,197,94,0.05);border-radius:8px;border:0.5px solid rgba(34,197,94,0.15)">
-        <p style="font-size:0.6875rem;color:#9ca3af;line-height:1.7">
-          <strong style="color:#4ade80">关键优势：</strong><br>
-          即使数据库中写的是"产品负责人"而非"产品经理"，向量搜索也能匹配 — 两者在 256 维语义空间中距离很近。每个候选人的文本画像在系统启动时就预处理为向量并缓存，搜索时只需计算查询向量的相似度。
-        </p>
+      <!-- Layer 2 -->
+      <div class="bg-white rounded-2xl p-8 transition-all duration-300 card-hover border border-[#f2f2f7] fade-up" style="transition-delay:.1s">
+        <div class="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center mb-5">
+          <svg class="w-5 h-5 text-[#22c55e]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </div>
+        <p class="text-[10px] font-bold tracking-[0.12em] uppercase text-[#22c55e] mb-3">Layer 2</p>
+        <h3 class="text-xl font-semibold text-[#1d1d1f] mb-3">关键词+向量混合</h3>
+        <p class="text-sm text-[#86868b] leading-relaxed mb-6">中文分词加权打分 + Bailian text-embedding-v4 语义向量，双路并行融合，Top50 + 15 交叉补充。</p>
+        <div class="flex items-center gap-2 text-xs font-medium text-[#86868b]">
+          <span class="px-2.5 py-1 bg-[#fafafa] rounded-md">~8,000</span>
+          <span>→</span>
+          <span class="px-2.5 py-1 bg-[#fafafa] rounded-md">100</span>
+          <span class="ml-auto text-[#22c55e] font-semibold">×80</span>
+        </div>
       </div>
-    </div>
-  </div>
 
-  <!-- Layer 3 Deep Dive -->
-  <div class="section-title">
-    <h2>Layer 3 详解：LLM 重排序</h2>
-    <p>大模型像资深 HR 一样阅读理解 100 个候选人，给出结构化排序</p>
+      <!-- Layer 3 -->
+      <div class="bg-white rounded-2xl p-8 transition-all duration-300 card-hover border border-[#f2f2f7] fade-up" style="transition-delay:.2s">
+        <div class="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center mb-5">
+          <svg class="w-5 h-5 text-[#22c55e]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+        </div>
+        <p class="text-[10px] font-bold tracking-[0.12em] uppercase text-[#22c55e] mb-3">Layer 3</p>
+        <h3 class="text-xl font-semibold text-[#1d1d1f] mb-3">LLM 精排</h3>
+        <p class="text-sm text-[#86868b] leading-relaxed mb-6">qwen3.7-plus 阅读理解全部候选人摘要，逐条打分排序，输出评级 + 推荐理由。模拟资深 HR 招聘主管的判断。</p>
+        <div class="flex items-center gap-2 text-xs font-medium text-[#86868b]">
+          <span class="px-2.5 py-1 bg-[#fafafa] rounded-md">100</span>
+          <span>→</span>
+          <span class="px-2.5 py-1 bg-green-50 text-[#22c55e] rounded-md font-bold">Top N</span>
+          <span class="ml-auto text-[#22c55e] font-semibold">×10-20</span>
+        </div>
+      </div>
+    </div>
   </div>
+</section>
 
-  <div class="flow-chart">
-    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center;font-size:0.8125rem">
-      <span style="color:#9ca3af">100 候选人摘要</span>
-      <span style="color:#4b5563">→</span>
-      <span style="background:rgba(34,197,94,0.1);border:0.5px solid rgba(34,197,94,0.25);padding:8px 14px;border-radius:8px;color:#4ade80">qwen3.7-plus</span>
-      <span style="color:#4b5563">→</span>
-      <span style="color:#9ca3af">排序 + 评分 + 推荐理由</span>
-      <span style="color:#4b5563">→</span>
-      <span style="color:#4ade80;font-weight:600">Top N 结果</span>
-    </div>
-    <div style="margin-top:16px;font-size:0.75rem;color:#9ca3af;line-height:1.8">
-      <strong style="color:#d1d5db">System Prompt：</strong>
-      <span style="font-family:monospace;color:#6b7280">"你是一个人岗匹配专家。根据岗位需求对候选人进行打分排序。评分维度：技能匹配(30%)、经验匹配(25%)、绩效趋势(20%)、软性素质(15%)、发展潜力(10%)"</span><br><br>
-      <strong style="color:#d1d5db">输入：</strong>岗位需求描述 + 100 位候选人的结构化信息（姓名、部门、岗位、职级、技能、绩效、学历等）<br>
-      <strong style="color:#d1d5db">输出：</strong>JSON 排名列表，每个候选人含 <span class="code">score</span> <span class="code">grade</span> <span class="code">reason</span>
-    </div>
-  </div>
+<!-- ── Layer 2 Deep Dive ── -->
+<section id="layer2" class="py-20 lg:py-28">
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-10">
+    <p class="text-xs font-semibold tracking-[0.15em] uppercase text-[#22c55e] mb-4 fade-up">Deep Dive</p>
+    <h2 class="text-3xl lg:text-5xl font-bold tracking-tight text-[#1d1d1f] mb-4 fade-up">Layer 2 · 语义搜索核心</h2>
+    <p class="text-[#86868b] text-base mb-14 max-w-xl fade-up">为什么搜"产品经理"能匹配到"产品负责人"？为什么搜"后端开发"不会漏掉"服务端工程师"？</p>
 
-  <!-- Full data flow -->
-  <div class="section-title">
-    <h2>完整数据流</h2>
-    <p>从用户对话到最终结果，端到端架构总览</p>
-  </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <!-- Keyword -->
+      <div class="bg-[#fafafa] rounded-2xl p-8 lg:p-10 fade-up">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-2.5 h-2.5 rounded-full bg-amber-400"></div>
+          <h3 class="text-lg font-semibold text-[#1d1d1f]">关键词匹配 · Keyword Search</h3>
+        </div>
+        <p class="text-sm text-[#86868b] mb-6">轻量基线，无 LLM 调用，响应即时。中文 bigram 分词 + 字段加权打分。</p>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-[#f2f2f7]"><th class="text-left font-medium text-[#86868b] py-2 text-xs uppercase tracking-wider">搜索字段</th><th class="text-right font-medium text-[#86868b] py-2 text-xs uppercase tracking-wider">权重</th></tr>
+            </thead>
+            <tbody class="text-[#1d1d1f]">
+              <tr class="border-b border-[#f2f2f7]"><td class="py-2">岗位</td><td class="text-right font-semibold text-[#22c55e]">5.0</td></tr>
+              <tr class="border-b border-[#f2f2f7]"><td class="py-2">技能标签</td><td class="text-right font-semibold text-[#22c55e]">4.0</td></tr>
+              <tr class="border-b border-[#f2f2f7]"><td class="py-2">证书 / 感兴趣岗位</td><td class="text-right font-semibold text-[#22c55e]">3.0</td></tr>
+              <tr class="border-b border-[#f2f2f7]"><td class="py-2">工作领域</td><td class="text-right font-semibold text-[#22c55e]">2.5</td></tr>
+              <tr class="border-b border-[#f2f2f7]"><td class="py-2">专业</td><td class="text-right font-semibold text-[#22c55e]">2.0</td></tr>
+              <tr class="border-b border-[#f2f2f7]"><td class="py-2">部门</td><td class="text-right font-semibold text-[#22c55e]">1.5</td></tr>
+              <tr><td class="py-2">学历</td><td class="text-right font-semibold text-[#22c55e]">1.0</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="mt-6 p-4 bg-white rounded-xl border border-[#f2f2f7]">
+          <p class="text-xs text-[#86868b] mb-1 font-medium uppercase tracking-wider">中文分词示例</p>
+          <p class="text-sm font-mono text-[#1d1d1f]">"产品经理" → <span class="text-[#22c55e]">["产品经理", "产品", "品经", "经理"]</span></p>
+        </div>
+      </div>
 
-  <div class="arch-diagram">
-    <div class="arch-row">
-      <div class="arch-label">输入</div>
-      <div class="arch-content">
-        <div class="arch-box bold">💬 "帮我找高级产品经理"</div>
-        <div class="arch-arrow">→</div>
-        <div class="arch-box">前端 WebSocket</div>
-      </div>
-    </div>
-    <div class="arch-divider"></div>
-    <div class="arch-row">
-      <div class="arch-label">路由</div>
-      <div class="arch-content">
-        <div class="arch-box">NLP 意图解析</div>
-        <div class="arch-arrow">→</div>
-        <div class="arch-box highlight">intent:<br>position_to_person</div>
-        <div class="arch-arrow">→</div>
-        <div class="arch-box">MatchAgent</div>
-      </div>
-    </div>
-    <div class="arch-divider"></div>
-    <div class="arch-row">
-      <div class="arch-label">Layer 1</div>
-      <div class="arch-content">
-        <div class="arch-box">规则过滤</div>
-        <div class="arch-arrow">→</div>
-        <div class="arch-box bold">11,000 → 8,000</div>
-      </div>
-    </div>
-    <div class="arch-divider"></div>
-    <div class="arch-row">
-      <div class="arch-label">Layer 2</div>
-      <div class="arch-content">
-        <div class="arch-box" style="border-color:rgba(245,158,11,0.3);background:rgba(245,158,11,0.06)">关键词<br>分词+加权</div>
-        <div class="arch-arrow">⊕</div>
-        <div class="arch-box" style="border-color:rgba(34,197,94,0.3);background:rgba(34,197,94,0.06)">向量语义<br>embed→cos</div>
-        <div class="arch-arrow">→</div>
-        <div class="arch-box bold">8,000 → 100</div>
-      </div>
-    </div>
-    <div class="arch-divider"></div>
-    <div class="arch-row">
-      <div class="arch-label">Layer 3</div>
-      <div class="arch-content">
-        <div class="arch-box highlight">qwen3.7-plus<br>精排+打分</div>
-        <div class="arch-arrow">→</div>
-        <div class="arch-box bold">100 → Top N</div>
-      </div>
-    </div>
-    <div class="arch-divider"></div>
-    <div class="arch-row">
-      <div class="arch-label">输出</div>
-      <div class="arch-content">
-        <div class="arch-box" style="border-color:rgba(34,197,94,0.5);background:rgba(34,197,94,0.1);color:#4ade80;font-weight:600">🎯 候选人卡片 + 评级 + 推荐理由</div>
-        <div class="arch-arrow">→</div>
-        <div class="arch-box">WebSocket<br>逐条推送</div>
-      </div>
-    </div>
-  </div>
+      <!-- Vector -->
+      <div class="bg-[#fafafa] rounded-2xl p-8 lg:p-10 fade-up">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-2.5 h-2.5 rounded-full bg-[#22c55e]"></div>
+          <h3 class="text-lg font-semibold text-[#1d1d1f]">向量语义搜索 · Vector Semantic</h3>
+        </div>
+        <p class="text-sm text-[#86868b] mb-6">理解语义含义，不依赖精确字面匹配。每个候选人画像预处理为 256 维向量并缓存。</p>
 
-  <!-- Tech Stack -->
-  <div class="section-title">
-    <h2>技术栈</h2>
-  </div>
-  <div class="tech-stack">
-    <div class="tech"><span class="t-dot" style="background:#22c55e"></span> Starlette (WebSocket)</div>
-    <div class="tech"><span class="t-dot" style="background:#fbbf24"></span> qwen3.7-plus</div>
-    <div class="tech"><span class="t-dot" style="background:#22c55e"></span> text-embedding-v4</div>
-    <div class="tech"><span class="t-dot" style="background:#3b82f6"></span> Pandas + NumPy</div>
-    <div class="tech"><span class="t-dot" style="background:#8b5cf6"></span> Render.com</div>
-    <div class="tech"><span class="t-dot" style="background:#ec4899"></span> Shadow DOM Widget</div>
-    <div class="tech"><span class="t-dot" style="background:#f97316"></span> 阿里云百炼</div>
-  </div>
+        <div class="space-y-4">
+          <div class="bg-white rounded-xl p-4 border border-[#f2f2f7]">
+            <p class="text-xs text-[#86868b] mb-2 font-medium uppercase tracking-wider">用户查询</p>
+            <p class="text-sm font-semibold text-[#1d1d1f] mb-1">"高级产品经理"</p>
+            <p class="text-xs text-[#86868b]">→ Bailian API → 256 维向量</p>
+          </div>
+          <div class="text-center text-[#86868b] text-sm">↓ cosine similarity ↓</div>
+          <div class="bg-white rounded-xl p-4 border border-[#f2f2f7] text-sm space-y-2.5">
+            <div class="flex justify-between"><span>G004222 马娟 · 产品经理</span><span class="font-semibold text-[#22c55e]">0.89</span></div>
+            <div class="flex justify-between"><span>G010956 吴杰 · 高级产品经理</span><span class="font-semibold text-[#22c55e]">0.82</span></div>
+            <div class="flex justify-between"><span>G003421 刘洋 · 产品负责人</span><span class="font-semibold text-[#22c55e]">0.78</span></div>
+            <div class="flex justify-between"><span>G005678 张伟 · 项目经理</span><span class="font-semibold text-[#86868b]">0.65</span></div>
+            <div class="flex justify-between"><span>G007890 陈明 · 需求分析师</span><span class="font-semibold text-[#86868b]">0.61</span></div>
+          </div>
+        </div>
 
-  <!-- Footer -->
-  <div class="footer">
-    <p>AI 人才发现助手 · <a href="https://github.com/AnGitCC/talent-discovery-widget" target="_blank">GitHub</a> · <a href="https://talent-discovery-widget.onrender.com" target="_blank">在线演示</a></p>
-    <p style="margin-top:4px">Goertek · 2026</p>
+        <div class="mt-6 p-4 bg-green-50 rounded-xl border border-green-100">
+          <p class="text-xs font-semibold text-[#16a34a] mb-1">关键优势</p>
+          <p class="text-xs text-[#1d1d1f] leading-relaxed">即使写的是"产品负责人"而非"产品经理"，向量搜索也能匹配 — 两者在语义空间中距离很近。系统启动时预处理全部向量并缓存在磁盘，搜索只在查询向量上计算。</p>
+        </div>
+      </div>
+    </div>
   </div>
-</div>
+</section>
+
+<!-- ── Layer 3 ── -->
+<section class="py-20 lg:py-28 bg-[#fafafa]">
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-10">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+      <div class="fade-up">
+        <p class="text-xs font-semibold tracking-[0.15em] uppercase text-[#22c55e] mb-4">Layer 3</p>
+        <h2 class="text-3xl lg:text-5xl font-bold tracking-tight text-[#1d1d1f] mb-6">LLM 重排序</h2>
+        <p class="text-[#86868b] leading-relaxed mb-8">qwen3.7-plus 像资深 HR 一样，阅读理解 100 位候选人信息，按技能匹配、经验匹配、绩效趋势、软性素质、发展潜力五个维度综合打分。</p>
+        <div class="space-y-4">
+          <div class="flex items-start gap-4 p-4 bg-white rounded-xl border border-[#f2f2f7]">
+            <div class="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <span class="text-xs font-bold text-[#22c55e]">in</span>
+            </div>
+            <div><p class="text-xs font-semibold text-[#1d1d1f] mb-1">输入</p><p class="text-xs text-[#86868b]">岗位需求描述 + 100 位候选人的结构化信息（姓名、部门、岗位、职级、技能、绩效、学历）</p></div>
+          </div>
+          <div class="flex items-start gap-4 p-4 bg-white rounded-xl border border-[#f2f2f7]">
+            <div class="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <span class="text-xs font-bold text-[#22c55e]">out</span>
+            </div>
+            <div><p class="text-xs font-semibold text-[#1d1d1f] mb-1">输出</p><p class="text-xs text-[#86868b]">JSON 排名列表，每人含 score（0-100）、grade（S/A/B/C）、reason（推荐理由）</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white rounded-2xl p-8 border border-[#f2f2f7] fade-up font-mono text-xs text-[#86868b] leading-relaxed overflow-x-auto">
+        <span class="text-[#86868b]">// System Prompt</span><br>
+        <span class="text-[#16a34a]">"你是一个人岗匹配专家。<br>评分维度：技能匹配(30%)<br>　　　　　经验匹配(25%)<br>　　　　　绩效趋势(20%)<br>　　　　　软性素质(15%)<br>　　　　　发展潜力(10%)<br>只返回JSON。"</span><br><br>
+        <span class="text-[#86868b]">// Response</span><br>
+        <span class="text-[#1d1d1f]">{</span><br>
+        <span class="text-[#1d1d1f]">&nbsp;&nbsp;"rankings":</span> [<br>
+        <span class="text-[#1d1d1f]">&nbsp;&nbsp;&nbsp;&nbsp;{ "employee_id": "G004222",</span><br>
+        <span class="text-[#1d1d1f]">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"score":</span> <span class="text-[#22c55e]">92</span>,<br>
+        <span class="text-[#1d1d1f]">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"grade":</span> <span class="text-[#22c55e]">"S"</span>,<br>
+        <span class="text-[#1d1d1f]">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"reason":</span> <span class="text-[#16a34a]">"技能高度匹配，绩效持续优秀"</span> }<br>
+        <span class="text-[#1d1d1f]">&nbsp;&nbsp;],</span><br>
+        <span class="text-[#1d1d1f]">&nbsp;&nbsp;"summary":</span> <span class="text-[#16a34a]">"整体匹配分析..."</span><br>
+        <span class="text-[#1d1d1f]">}</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Data Flow ── -->
+<section id="flow" class="py-20 lg:py-28">
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-10">
+    <p class="text-xs font-semibold tracking-[0.15em] uppercase text-[#22c55e] mb-4 fade-up">Data Flow</p>
+    <h2 class="text-3xl lg:text-5xl font-bold tracking-tight text-[#1d1d1f] mb-14 fade-up">完整数据流</h2>
+
+    <div class="max-w-3xl mx-auto">
+      <!-- Input -->
+      <div class="flex items-center gap-4 mb-3 fade-up">
+        <div class="w-20 flex-shrink-0 text-right text-xs font-semibold uppercase tracking-wider text-[#86868b]">输入</div>
+        <div class="flex-1 flex items-center gap-3">
+          <div class="bg-white border border-[#f2f2f7] rounded-xl px-4 py-3 text-sm font-medium text-[#1d1d1f]">💬 "帮我找高级产品经理"</div>
+          <div class="text-[#86868b]">→</div>
+          <div class="bg-[#fafafa] rounded-xl px-4 py-3 text-sm text-[#86868b]">WebSocket</div>
+        </div>
+      </div>
+      <div class="flex justify-center mb-3 fade-up"><div class="w-px h-6 bg-[#f2f2f7]"></div></div>
+
+      <!-- Route -->
+      <div class="flex items-center gap-4 mb-3 fade-up">
+        <div class="w-20 flex-shrink-0 text-right text-xs font-semibold uppercase tracking-wider text-[#86868b]">路由</div>
+        <div class="flex-1 flex items-center gap-3">
+          <div class="bg-[#fafafa] rounded-xl px-4 py-3 text-sm text-[#86868b]">NLP 意图解析</div>
+          <div class="text-[#86868b]">→</div>
+          <div class="bg-green-50 border border-green-100 rounded-xl px-4 py-3 text-sm font-medium text-[#22c55e]">position_to_person</div>
+          <div class="text-[#86868b]">→</div>
+          <div class="bg-[#fafafa] rounded-xl px-4 py-3 text-sm text-[#86868b]">MatchAgent</div>
+        </div>
+      </div>
+      <div class="flex justify-center mb-3 fade-up"><div class="w-px h-6 bg-[#f2f2f7]"></div></div>
+
+      <!-- Layer 1 -->
+      <div class="flex items-center gap-4 mb-3 fade-up">
+        <div class="w-20 flex-shrink-0 text-right text-xs font-semibold uppercase tracking-wider text-[#86868b]">Layer 1</div>
+        <div class="flex-1 flex items-center gap-3">
+          <div class="bg-[#fafafa] rounded-xl px-4 py-3 text-sm text-[#86868b]">规则过滤</div>
+          <div class="text-[#86868b]">→</div>
+          <div class="bg-white border border-[#f2f2f7] rounded-xl px-4 py-3 text-sm font-semibold text-[#1d1d1f]">11,000 → 8,000</div>
+        </div>
+      </div>
+      <div class="flex justify-center mb-3 fade-up"><div class="w-px h-6 bg-[#f2f2f7]"></div></div>
+
+      <!-- Layer 2 -->
+      <div class="flex items-center gap-4 mb-3 fade-up">
+        <div class="w-20 flex-shrink-0 text-right text-xs font-semibold uppercase tracking-wider text-[#86868b]">Layer 2</div>
+        <div class="flex-1 flex items-center gap-3">
+          <div class="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 text-sm text-[#1d1d1f]">关键词分词+加权</div>
+          <div class="text-[#86868b]">⊕</div>
+          <div class="bg-green-50 border border-green-100 rounded-xl px-4 py-3 text-sm text-[#1d1d1f]">向量 embed→cos</div>
+          <div class="text-[#86868b]">→</div>
+          <div class="bg-white border border-[#f2f2f7] rounded-xl px-4 py-3 text-sm font-semibold text-[#1d1d1f]">8,000 → 100</div>
+        </div>
+      </div>
+      <div class="flex justify-center mb-3 fade-up"><div class="w-px h-6 bg-[#f2f2f7]"></div></div>
+
+      <!-- Layer 3 -->
+      <div class="flex items-center gap-4 mb-3 fade-up">
+        <div class="w-20 flex-shrink-0 text-right text-xs font-semibold uppercase tracking-wider text-[#86868b]">Layer 3</div>
+        <div class="flex-1 flex items-center gap-3">
+          <div class="bg-green-50 border border-green-100 rounded-xl px-4 py-3 text-sm font-medium text-[#22c55e]">qwen3.7-plus 精排+打分</div>
+          <div class="text-[#86868b]">→</div>
+          <div class="bg-white border border-[#f2f2f7] rounded-xl px-4 py-3 text-sm font-semibold text-[#1d1d1f]">100 → Top N</div>
+        </div>
+      </div>
+      <div class="flex justify-center mb-3 fade-up"><div class="w-px h-6 bg-[#f2f2f7]"></div></div>
+
+      <!-- Output -->
+      <div class="flex items-center gap-4 fade-up">
+        <div class="w-20 flex-shrink-0 text-right text-xs font-semibold uppercase tracking-wider text-[#86868b]">输出</div>
+        <div class="flex-1 flex items-center gap-3">
+          <div class="bg-gradient-to-r from-[#22c55e] to-[#4ade80] rounded-xl px-5 py-3 text-sm font-semibold text-white">🎯 候选人卡片 + 评级 + 推荐理由</div>
+          <div class="text-[#86868b]">→</div>
+          <div class="bg-[#fafafa] rounded-xl px-4 py-3 text-sm text-[#86868b]">WebSocket 逐条推送</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Tech Stack ── -->
+<section id="stack" class="py-20 lg:py-28 bg-[#fafafa]">
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-10">
+    <p class="text-xs font-semibold tracking-[0.15em] uppercase text-[#22c55e] mb-4 fade-up">Tech Stack</p>
+    <h2 class="text-3xl lg:text-5xl font-bold tracking-tight text-[#1d1d1f] mb-14 fade-up">技术栈</h2>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-white rounded-2xl p-6 border border-[#f2f2f7] card-hover transition-all duration-300 fade-up">
+        <div class="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center mb-4">
+          <span class="text-sm font-bold text-[#22c55e]">☆</span>
+        </div>
+        <p class="font-semibold text-sm text-[#1d1d1f] mb-1">Starlette</p>
+        <p class="text-xs text-[#86868b]">WebSocket 服务</p>
+      </div>
+      <div class="bg-white rounded-2xl p-6 border border-[#f2f2f7] card-hover transition-all duration-300 fade-up" style="transition-delay:.05s">
+        <div class="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center mb-4">
+          <span class="text-sm font-bold text-[#22c55e]">Q</span>
+        </div>
+        <p class="font-semibold text-sm text-[#1d1d1f] mb-1">qwen3.7-plus</p>
+        <p class="text-xs text-[#86868b]">LLM 推理模型</p>
+      </div>
+      <div class="bg-white rounded-2xl p-6 border border-[#f2f2f7] card-hover transition-all duration-300 fade-up" style="transition-delay:.1s">
+        <div class="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center mb-4">
+          <span class="text-sm font-bold text-[#22c55e]">E</span>
+        </div>
+        <p class="font-semibold text-sm text-[#1d1d1f] mb-1">text-embedding-v4</p>
+        <p class="text-xs text-[#86868b]">向量嵌入模型</p>
+      </div>
+      <div class="bg-white rounded-2xl p-6 border border-[#f2f2f7] card-hover transition-all duration-300 fade-up" style="transition-delay:.15s">
+        <div class="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center mb-4">
+          <span class="text-sm font-bold text-[#22c55e]">P</span>
+        </div>
+        <p class="font-semibold text-sm text-[#1d1d1f] mb-1">Pandas + NumPy</p>
+        <p class="text-xs text-[#86868b]">数据处理引擎</p>
+      </div>
+      <div class="bg-white rounded-2xl p-6 border border-[#f2f2f7] card-hover transition-all duration-300 fade-up">
+        <div class="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center mb-4">
+          <span class="text-sm font-bold text-[#22c55e]">R</span>
+        </div>
+        <p class="font-semibold text-sm text-[#1d1d1f] mb-1">Render.com</p>
+        <p class="text-xs text-[#86868b]">部署平台</p>
+      </div>
+      <div class="bg-white rounded-2xl p-6 border border-[#f2f2f7] card-hover transition-all duration-300 fade-up" style="transition-delay:.05s">
+        <div class="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center mb-4">
+          <span class="text-sm font-bold text-[#22c55e]">D</span>
+        </div>
+        <p class="font-semibold text-sm text-[#1d1d1f] mb-1">Shadow DOM</p>
+        <p class="text-xs text-[#86868b]">Widget 隔离</p>
+      </div>
+      <div class="bg-white rounded-2xl p-6 border border-[#f2f2f7] card-hover transition-all duration-300 fade-up" style="transition-delay:.1s">
+        <div class="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center mb-4">
+          <span class="text-sm font-bold text-[#22c55e]">百</span>
+        </div>
+        <p class="font-semibold text-sm text-[#1d1d1f] mb-1">阿里云百炼</p>
+        <p class="text-xs text-[#86868b]">AI 平台</p>
+      </div>
+      <div class="bg-white rounded-2xl p-6 border border-[#f2f2f7] card-hover transition-all duration-300 fade-up" style="transition-delay:.15s">
+        <div class="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center mb-4">
+          <span class="text-sm font-bold text-[#22c55e]">C</span>
+        </div>
+        <p class="font-semibold text-sm text-[#1d1d1f] mb-1">8 线程并行</p>
+        <p class="text-xs text-[#86868b]">Embedding 加速</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FAQ ── -->
+<section class="py-20 lg:py-28">
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-10">
+    <p class="text-xs font-semibold tracking-[0.15em] uppercase text-[#22c55e] mb-4 fade-up">FAQ</p>
+    <h2 class="text-3xl lg:text-5xl font-bold tracking-tight text-[#1d1d1f] mb-14 fade-up">常见问题</h2>
+
+    <div class="max-w-3xl space-y-1">
+      <details class="group fade-up" open>
+        <summary class="cursor-pointer list-none flex items-center justify-between py-5 border-b border-[#f2f2f7] group-open:border-[#22c55e] transition-colors">
+          <span class="text-base font-medium text-[#1d1d1f]">关键词匹配和向量搜索的关系是什么？</span>
+          <span class="text-[#86868b] group-open:rotate-45 transition-transform duration-200 text-lg">+</span>
+        </summary>
+        <p class="py-4 text-sm text-[#86868b] leading-relaxed">两者并行执行、结果融合。关键词负责精确匹配（速度快、无延迟），向量负责语义扩展（理解同义词、近义词、相关概念）。关键词 Top50 + 向量 Top15 交叉补充，覆盖"精确命中"和"语义相似"两种场景。</p>
+      </details>
+      <details class="group fade-up">
+        <summary class="cursor-pointer list-none flex items-center justify-between py-5 border-b border-[#f2f2f7] group-open:border-[#22c55e] transition-colors">
+          <span class="text-base font-medium text-[#1d1d1f]">首次搜索为什么比较慢？</span>
+          <span class="text-[#86868b] group-open:rotate-45 transition-transform duration-200 text-lg">+</span>
+        </summary>
+        <p class="py-4 text-sm text-[#86868b] leading-relaxed">首次使用需要预计算所有候选人的向量嵌入。400 条记录约需 6-8 秒（8 线程并行 + text-embedding-v4），结果缓存到磁盘。后续搜索从缓存加载，秒级响应。</p>
+      </details>
+      <details class="group fade-up">
+        <summary class="cursor-pointer list-none flex items-center justify-between py-5 border-b border-[#f2f2f7] group-open:border-[#22c55e] transition-colors">
+          <span class="text-base font-medium text-[#1d1d1f]">支持哪些 LLM 后端？</span>
+          <span class="text-[#86868b] group-open:rotate-45 transition-transform duration-200 text-lg">+</span>
+        </summary>
+        <p class="py-4 text-sm text-[#86868b] leading-relaxed">三层后端可插拔：<strong>Bailian</strong>（阿里云百炼，qwen3.7-plus + text-embedding-v4，当前使用）、<strong>AIHub</strong>（公司内网 AI 平台，公网不可达）、<strong>Mock</strong>（开发阶段规则模拟，零 API 调用）。配置文件切换一行代码即可。</p>
+      </details>
+      <details class="group fade-up">
+        <summary class="cursor-pointer list-none flex items-center justify-between py-5 border-b border-[#f2f2f7] group-open:border-[#22c55e] transition-colors">
+          <span class="text-base font-medium text-[#1d1d1f]">如何嵌入到现有的 HR 门户？</span>
+          <span class="text-[#86868b] group-open:rotate-45 transition-transform duration-200 text-lg">+</span>
+        </summary>
+        <p class="py-4 text-sm text-[#86868b] leading-relaxed">一行 script 标签即可：<code class="bg-[#fafafa] px-2 py-0.5 rounded text-xs">&lt;script src="域名/widget/talent-widget.js" data-ws="wss://域名"&gt;&lt;/script&gt;</code>。Widget 使用 Shadow DOM 完全隔离样式，不会与宿主页面冲突。</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA ── -->
+<section class="py-20 lg:py-28 bg-[#fafafa]">
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-10 text-center">
+    <h2 class="text-3xl lg:text-5xl font-bold tracking-tight text-[#1d1d1f] mb-4 fade-up">体验 AI 驱动的人才搜索</h2>
+    <p class="text-lg text-[#86868b] mb-10 max-w-lg mx-auto fade-up">打开在线演示，用自然语言搜索候选人、对比画像、生成分析报告。</p>
+    <div class="flex items-center justify-center gap-4 fade-up">
+      <a href="https://talent-discovery-widget.onrender.com" class="inline-flex items-center px-8 py-3.5 bg-gradient-to-r from-[#22c55e] to-[#4ade80] text-white font-medium rounded-full transition duration-200 btn-hover text-sm">在线演示</a>
+      <a href="https://github.com/AnGitCC/talent-discovery-widget" class="inline-flex items-center px-8 py-3.5 bg-transparent border border-[#22c55e] text-[#22c55e] font-medium rounded-full transition duration-200 hover:bg-green-50 btn-hover text-sm">GitHub →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer class="py-10 bg-[#fafafa] border-t border-[#f2f2f7]">
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#86868b]">
+    <p>AI 人才发现助手 · Goertek · 2026</p>
+    <div class="flex gap-6">
+      <a href="https://github.com/AnGitCC/talent-discovery-widget" class="hover:text-[#1d1d1f] transition-colors">GitHub</a>
+      <a href="https://talent-discovery-widget.onrender.com" class="hover:text-[#1d1d1f] transition-colors">在线演示</a>
+      <a href="https://talent-discovery-widget.onrender.com/demo" class="hover:text-[#1d1d1f] transition-colors">HR 门户</a>
+    </div>
+  </div>
+</footer>
+
+<!-- ── Scroll Animation ── -->
+<script>
+(function(){
+  var els = document.querySelectorAll('.fade-up');
+  var obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target);}
+    });
+  },{threshold:0.15});
+  els.forEach(function(el){obs.observe(el);});
+})();
+
+// Nav dynamic opacity
+(function(){
+  var nav = document.getElementById('nav');
+  window.addEventListener('scroll',function(){
+    nav.style.backgroundColor = window.scrollY > 20 ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.7)';
+  },{passive:true});
+})();
+</script>
 </body>
 </html>
