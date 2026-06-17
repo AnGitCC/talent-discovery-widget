@@ -13,10 +13,21 @@ TEST_DATA_FILE = ROOT_DIR / "test_talent_data_10000_cn.xlsx"
 DATA_PROVIDER = "excel"  # "excel" | "api"
 
 # LLM
-LLM_BACKEND = "mock"  # "mock" | "aihub"
+LLM_BACKEND = "bailian"  # "mock" | "aihub" | "bailian"
 AIHUB_BASE_URL = "https://aihub-api.goertek.com:30080/v1"
-AIHUB_API_KEY = ""   # Fill when available
+AIHUB_API_KEY = ""
 AIHUB_MODEL = "Qwen3-VL-235B-A22B-Instruct"
+
+# Alibaba Bailian (Dashscope) — set BAILIAN_API_KEY env var in production
+BAILIAN_API_KEY = ""   # always read from env, never hardcode
+BAILIAN_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+BAILIAN_CHAT_MODEL = "qwen3.7-plus"
+BAILIAN_EMBED_MODEL = "text-embedding-v3"
+
+# Allow override via environment variables
+import os
+if _env_key := os.getenv("BAILIAN_API_KEY"):
+    BAILIAN_API_KEY = _env_key
 
 # Vector
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"  # lightweight local model

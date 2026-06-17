@@ -1,6 +1,7 @@
-"""Pluggable LLM backend: Mock (dev) + AIHub (production)."""
+"""Pluggable LLM backend: Mock (dev) + AIHub (internal) + Bailian (Alibaba)."""
 from typing import Protocol
 from utils.config import AIHUB_BASE_URL, AIHUB_API_KEY, AIHUB_MODEL
+from utils.config import BAILIAN_API_KEY, BAILIAN_BASE_URL, BAILIAN_CHAT_MODEL, BAILIAN_EMBED_MODEL
 
 
 class LLMBackend(Protocol):
@@ -201,9 +202,64 @@ class AIHubBackend:
         return [item["embedding"] for item in data["data"]]
 
 
+class BailianBackend:
+    """Alibaba Bailian (Dashscope) — OpenAI-compatible chat + embeddings."""
+
+    def __init__(self, base_url=None, api_key=None, chat_model=None, embed_model=None):
+        self.base_url = base_url or BAILIAN_BASE_URL
+        self.api_key = api_key or BAILIAN_API_KEY
+        self.chat_model = chat_model or BAILIAN_CHAT_MODEL
+        self.embed_model = embed_model or BAILIAN_EMBED_MODEL
+
+    def chat(self, messages: list[dict], **kwargs) -> str:
+        import httpx
+        if not self.api_key:
+            raise ValueError("BAILIAN_API_KEY not set.")
+
+        resp = httpx.post(
+            f"{self.base_url}/chat/completions",
+            headers={"Authorization": f"Bearer {self.api_key}"},
+            json={
+                "model": self.chat_model,
+                "messages": messages,
+                "temperature": kwargs.get("temperature", 0.1),
+                "max_tokens": kwargs.get("max_tokens", 2048),
+            },
+            timeout=120,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        return data["choices"][0]["message"]["content"]
+
+    def embed(self, texts: list[str]) -> list[list[float]]:
+        import httpx
+        if not self.api_key:
+            raise ValueError("BAILIAN_API_KEY not set.")
+
+        vectors = []
+        # text-embedding-v3 via compatible-mode endpoint (batch up to 25)
+        for i in range(0, len(texts), 25):
+            resp = httpx.post(
+                f"{self.base_url}/embeddings",
+                headers={"Authorization": f"Bearer {self.api_key}"},
+                json={
+                    "model": self.embed_model,
+                    "input": texts[i:i+25],
+                },
+                timeout=120,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            for item in data.get("data", []):
+                vectors.append(item["embedding"])
+        return vectors
+
+
 def get_llm() -> LLMBackend:
     """Factory: return the configured LLM backend."""
     from utils.config import LLM_BACKEND
+    if LLM_BACKEND == "bailian":
+        return BailianBackend()
     if LLM_BACKEND == "aihub":
         return AIHubBackend()
     return MockBackend()
