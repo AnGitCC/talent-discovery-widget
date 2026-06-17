@@ -237,8 +237,8 @@ class BailianBackend:
             raise ValueError("BAILIAN_API_KEY not set.")
 
         vectors = []
-        # text-embedding-v3 via compatible-mode endpoint (batch up to 25)
-        for i in range(0, len(texts), 25):
+        # text-embedding-v3: max batch size is 10
+        for i in range(0, len(texts), 10):
             resp = httpx.post(
                 f"{self.base_url}/embeddings",
                 headers={"Authorization": f"Bearer {self.api_key}"},

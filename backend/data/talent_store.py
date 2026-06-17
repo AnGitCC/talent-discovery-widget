@@ -40,11 +40,40 @@ class TalentStore:
         return pd.DataFrame(self.records)
 
     def _build_embeddings(self, embedding_fn):
-        """Pre-compute embeddings for all records in memory."""
+        """Pre-compute embeddings for all records, with cache to disk."""
+        import pickle
+        from pathlib import Path
+        from utils.config import ROOT_DIR
+
+        cache_path = ROOT_DIR / ".embedding_cache.pkl"
+        # Check if cache exists and is for the right number of records
+        if cache_path.exists():
+            try:
+                cached = pickle.loads(cache_path.read_bytes())
+                if cached.get("count") == len(self.records):
+                    self._embeddings = cached["embeddings"]
+                    self._embedding_ids = cached["ids"]
+                    print(f"Loaded {len(self.records)} embeddings from cache")
+                    return
+            except Exception:
+                pass
+
+        print(f"Building embeddings for {len(self.records)} records (this may take a while)...")
         texts = [build_text_profile(r) for r in self.records]
         vecs = embedding_fn(texts)
         self._embeddings = np.array(vecs, dtype=np.float32)
         self._embedding_ids = [str(r.get("工号", "")) for r in self.records]
+
+        # Save cache
+        try:
+            cache_path.write_bytes(pickle.dumps({
+                "count": len(self.records),
+                "embeddings": self._embeddings,
+                "ids": self._embedding_ids,
+            }))
+            print(f"Embedding cache saved: {cache_path}")
+        except Exception as e:
+            print(f"Could not save embedding cache: {e}")
 
     # ── CRUD ──
 
