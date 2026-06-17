@@ -237,21 +237,29 @@ class BailianBackend:
         if not self.api_key:
             raise ValueError("BAILIAN_API_KEY not set.")
 
-        # text-embedding-v3/v4: max batch size is 10
-        BATCH = 10
+        # tongyi-embedding-vision-plus: max batch 20, 1152-dim output
+        # Uses multimodal embedding endpoint (not compatible-mode)
+        EMBED_URL = "https://dashscope.aliyuncs.com/api/v1/services/embeddings/multimodal-embedding/multimodal-embedding"
+        BATCH = 20
         batches = [texts[i:i+BATCH] for i in range(0, len(texts), BATCH)]
 
         def _fetch(batch):
             resp = httpx.post(
-                f"{self.base_url}/embeddings",
-                headers={"Authorization": f"Bearer {self.api_key}"},
-                json={"model": self.embed_model, "input": batch, "dimensions": 256},
+                EMBED_URL,
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": self.embed_model,
+                    "input": {"contents": [{"text": t} for t in batch]},
+                },
                 timeout=120,
             )
             resp.raise_for_status()
-            return [item["embedding"] for item in resp.json()["data"]]
+            return [item["embedding"] for item in resp.json()["output"]["embeddings"]]
 
-        # 8 concurrent requests — fast enough for hundreds~thousands of records
+        # 8 concurrent requests, batch=20 = 160 records per round
         vectors = []
         with ThreadPoolExecutor(max_workers=8) as pool:
             for result in pool.map(_fetch, batches):

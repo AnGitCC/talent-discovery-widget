@@ -7,7 +7,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 
 # Data
 DATA_DIR = ROOT_DIR / "data"
-TEST_DATA_FILE = ROOT_DIR / "test_talent_data_10000_cn.xlsx"
+TEST_DATA_FILE = ROOT_DIR / "test_talent_data_400_cn.xlsx"
 
 # Data source
 DATA_PROVIDER = "excel"  # "excel" | "api"
@@ -22,7 +22,7 @@ AIHUB_MODEL = "Qwen3-VL-235B-A22B-Instruct"
 BAILIAN_API_KEY = ""   # always read from env, never hardcode
 BAILIAN_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 BAILIAN_CHAT_MODEL = "qwen3.7-plus"
-BAILIAN_EMBED_MODEL = "text-embedding-v4"
+BAILIAN_EMBED_MODEL = "tongyi-embedding-vision-plus-2026-03-06"
 
 # Allow override via environment variables
 import os
