@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 人才发现助手 — 语义搜索架构</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter,-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(180deg,#0a0f1a 0%,#111827 100%);color:#e5e7eb;min-height:100vh;line-height:1.7}
+  .page{max-width:1100px;margin:0 auto;padding:60px 24px}
+
+  /* ── Hero ── */
+  .hero{text-align:center;margin-bottom:64px}
+  .hero .badge{display:inline-block;background:rgba(34,197,94,0.12);border:0.5px solid rgba(34,197,94,0.25);color:#22c55e;font-size:12px;font-weight:600;padding:4px 12px;border-radius:20px;letter-spacing:0.06em;margin-bottom:20px}
+  .hero h1{font-size:clamp(2rem,5vw,3rem);font-weight:700;color:#f9fafb;line-height:1.3;margin-bottom:16px}
+  .hero h1 span{background:linear-gradient(135deg,#22c55e,#4ade80);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .hero .sub{font-size:1.1rem;color:#9ca3af;max-width:600px;margin:0 auto 32px}
+  .hero .quick-stats{display:flex;gap:32px;justify-content:center;flex-wrap:wrap}
+  .hero .stat{text-align:center}
+  .hero .stat-val{font-size:2rem;font-weight:700;color:#22c55e;font-family:"SF Mono","JetBrains Mono",monospace}
+  .hero .stat-label{font-size:0.75rem;color:#6b7280;margin-top:4px;text-transform:uppercase;letter-spacing:0.08em}
+
+  /* ── Section Title ── */
+  .section-title{margin:56px 0 28px;text-align:center}
+  .section-title h2{font-size:1.5rem;font-weight:600;color:#f3f4f6;margin-bottom:8px}
+  .section-title p{font-size:0.875rem;color:#9ca3af}
+
+  /* ── Architecture Diagram ── */
+  .arch-diagram{display:flex;flex-direction:column;gap:0;background:linear-gradient(180deg,rgba(31,41,55,0.5),rgba(17,24,39,0.8));border:0.5px solid rgba(75,85,99,0.3);border-radius:16px;overflow:hidden;padding:28px 24px}
+  .arch-row{display:flex;align-items:center;gap:16px}
+  .arch-label{width:100px;flex-shrink:0;font-size:0.6875rem;color:#9ca3af;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;text-align:right}
+  .arch-content{flex:1;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .arch-box{background:rgba(31,41,55,0.8);border:0.5px solid rgba(75,85,99,0.4);border-radius:10px;padding:12px 16px;font-size:0.8125rem;color:#d1d5db;white-space:nowrap}
+  .arch-box.highlight{border-color:rgba(34,197,94,0.4);background:rgba(34,197,94,0.08);color:#4ade80}
+  .arch-box.bold{font-weight:600;color:#f3f4f6}
+  .arch-arrow{color:#4b5563;font-size:1.2rem;flex-shrink:0}
+  .arch-divider{width:100%;border-top:0.5px solid rgba(75,85,99,0.2);margin:4px 0}
+
+  /* ── Pipeline Cards ── */
+  .pipeline{display:flex;gap:16px;flex-wrap:wrap}
+  .pipe-card{flex:1;min-width:280px;background:linear-gradient(180deg,rgba(31,41,55,0.6),rgba(31,41,55,0.3));border:0.5px solid rgba(75,85,99,0.25);border-radius:14px;padding:24px;position:relative;overflow:hidden}
+  .pipe-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px}
+  .pipe-card.l1::before{background:linear-gradient(90deg,#6b7280,#9ca3af)}
+  .pipe-card.l2::before{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+  .pipe-card.l3::before{background:linear-gradient(90deg,#22c55e,#4ade80)}
+  .pipe-card .layer-tag{display:inline-block;font-size:0.625rem;font-weight:700;letter-spacing:0.1em;padding:2px 8px;border-radius:4px;margin-bottom:12px}
+  .pipe-card.l1 .layer-tag{background:rgba(107,114,128,0.2);color:#9ca3af}
+  .pipe-card.l2 .layer-tag{background:rgba(245,158,11,0.15);color:#fbbf24}
+  .pipe-card.l3 .layer-tag{background:rgba(34,197,94,0.15);color:#4ade80}
+  .pipe-card h3{font-size:1.1rem;font-weight:600;color:#f3f4f6;margin-bottom:8px}
+  .pipe-card .desc{font-size:0.8125rem;color:#9ca3af;margin-bottom:14px;line-height:1.6}
+  .pipe-card ul{list-style:none;font-size:0.8125rem;color:#d1d5db}
+  .pipe-card ul li{margin-bottom:6px;display:flex;align-items:flex-start;gap:6px}
+  .pipe-card ul li::before{content:"";width:5px;height:5px;border-radius:50%;flex-shrink:0;margin-top:7px}
+  .pipe-card.l1 ul li::before{background:#6b7280}
+  .pipe-card.l2 ul li::before{background:#f59e0b}
+  .pipe-card.l3 ul li::before{background:#22c55e}
+  .pipe-card .data-count{font-size:0.75rem;color:#6b7280;margin-top:12px;font-family:"SF Mono","JetBrains Mono",monospace}
+
+  /* ── Keyword + Vector Split ── */
+  .two-col{display:flex;gap:16px;flex-wrap:wrap;margin-top:20px}
+  .two-col > div{flex:1;min-width:280px;background:rgba(31,41,55,0.4);border:0.5px solid rgba(75,85,99,0.2);border-radius:12px;padding:20px}
+  .two-col h4{font-size:0.8125rem;font-weight:600;color:#f3f4f6;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+  .two-col h4 .dot{width:8px;height:8px;border-radius:50%}
+  .two-col table{width:100%;font-size:0.75rem;border-collapse:collapse}
+  .two-col th{text-align:left;color:#6b7280;font-weight:500;font-size:0.6875rem;padding:4px 8px 4px 0}
+  .two-col td{color:#9ca3af;padding:4px 8px 4px 0}
+  .two-col .code{font-family:"SF Mono","JetBrains Mono",monospace;font-size:0.6875rem;color:#fbbf24}
+
+  /* ── Embedding Detail ── */
+  .embed-section{margin-top:20px;text-align:center}
+  .embed-visual{display:inline-flex;align-items:center;gap:20px;flex-wrap:wrap;justify-content:center;font-size:0.8125rem}
+  .embed-visual .emb{background:rgba(34,197,94,0.06);border:0.5px solid rgba(34,197,94,0.2);border-radius:10px;padding:10px 16px}
+  .embed-visual .emb .label{font-size:0.625rem;color:#9ca3af;margin-bottom:4px}
+  .embed-visual .emb .val{font-family:"SF Mono","JetBrains Mono",monospace;color:#4ade80;font-size:0.75rem}
+  .embed-visual .arr{color:#4b5563;font-size:1.2rem}
+  .flow-chart{margin-top:20px;background:rgba(31,41,55,0.4);border-radius:12px;padding:24px;overflow-x:auto}
+
+  /* ── Tech Badges ── */
+  .tech-stack{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:28px}
+  .tech{background:rgba(31,41,55,0.6);border:0.5px solid rgba(75,85,99,0.3);border-radius:8px;padding:8px 16px;font-size:0.8125rem;color:#d1d5db;display:flex;align-items:center;gap:6px}
+  .tech .t-dot{width:7px;height:7px;border-radius:50%}
+
+  /* ── Footer ── */
+  .footer{text-align:center;margin-top:64px;padding-top:32px;border-top:0.5px solid rgba(75,85,99,0.2)}
+  .footer p{font-size:0.75rem;color:#6b7280}
+  .footer a{color:#22c55e;text-decoration:none}
+
+  /* ── Responsive ── */
+  @media(max-width:768px){
+    .arch-label{display:none}
+    .arch-row{flex-direction:column;align-items:flex-start;gap:8px}
+    .pipeline{flex-direction:column}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="badge">AI ARCHITECTURE</div>
+    <h1>AI 人才发现助手<br><span>语义搜索引擎架构</span></h1>
+    <p class="sub">从自然语言到精准人才匹配，三层流水线引擎驱动，关键词 + 向量 + LLM 协同工作</p>
+    <div class="quick-stats">
+      <div class="stat"><div class="stat-val">qwen3.7-plus</div><div class="stat-label">LLM 模型</div></div>
+      <div class="stat"><div class="stat-val">text-embedding-v4</div><div class="stat-label">嵌入模型</div></div>
+      <div class="stat"><div class="stat-val">256d</div><div class="stat-label">向量维度</div></div>
+      <div class="stat"><div class="stat-val">3 层</div><div class="stat-label">匹配流水线</div></div>
+    </div>
+  </div>
+
+  <!-- Pipeline Overview -->
+  <div class="section-title">
+    <h2>三层匹配流水线</h2>
+    <p>从粗到精，逐层筛选 — 11,000 候选人中精准定位最匹配的人才</p>
+  </div>
+
+  <div class="pipeline">
+    <div class="pipe-card l1">
+      <div class="layer-tag">LAYER 1</div>
+      <h3>规则过滤 · Rule Filter</h3>
+      <p class="desc">硬性条件筛选，纯规则引擎，零延迟</p>
+      <ul>
+        <li>学历、年龄、司龄、职级等硬性范围过滤</li>
+        <li>部门、岗位等精确匹配排除</li>
+        <li>绩效等级、证书等条件筛选</li>
+        <li>Pandas DataFrame 向量化执行</li>
+      </ul>
+      <div class="data-count">11,000 → ~8,000 人</div>
+    </div>
+
+    <div class="pipe-card l2">
+      <div class="layer-tag">LAYER 2</div>
+      <h3>关键词 + 向量混合 · Hybrid Search</h3>
+      <p class="desc">关键词精确匹配 + 语义向量相似度，双路并行融合</p>
+      <ul>
+        <li><strong>关键词：</strong>中文分词 + 字段加权打分（岗位×5.0）</li>
+        <li><strong>向量：</strong>Bailian text-embedding-v4 生成 256 维向量</li>
+        <li>关键词 Top50 + 向量 Top15 交叉补充</li>
+      </ul>
+      <div class="data-count">~8,000 → 100 人</div>
+    </div>
+
+    <div class="pipe-card l3">
+      <div class="layer-tag">LAYER 3</div>
+      <h3>LLM 精排 · LLM Rerank</h3>
+      <p class="desc">大模型阅读理解所有候选人与岗位需求，智能排序</p>
+      <ul>
+        <li>qwen3.7-plus 逐条理解候选人背景</li>
+        <li>输出排序 + 评分 + 推荐理由</li>
+        <li>模拟资深 HR 招聘主管的判断逻辑</li>
+      </ul>
+      <div class="data-count">100 → 最终 Top N 人</div>
+    </div>
+  </div>
+
+  <!-- Layer 2 Deep Dive -->
+  <div class="section-title">
+    <h2>Layer 2 详解：语义搜索的核心</h2>
+    <p>为什么搜"产品经理"能匹配到"产品负责人"？为什么搜"后端开发"不会漏掉"服务端工程师"？</p>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <h4><span class="dot" style="background:#f59e0b"></span> 关键词匹配 · Keyword Search</h4>
+      <p style="font-size:0.75rem;color:#9ca3af;margin-bottom:12px">轻量基线，无 LLM 调用，响应即时</p>
+      <table>
+        <tr><th>搜索字段</th><th>权重</th><th>说明</th></tr>
+        <tr><td>岗位</td><td style="color:#fbbf24">5.0</td><td>最相关</td></tr>
+        <tr><td>技能标签</td><td style="color:#fbbf24">4.0</td><td>核心能力</td></tr>
+        <tr><td>证书</td><td style="color:#fbbf24">3.0</td><td>资质证明</td></tr>
+        <tr><td>所有标签</td><td style="color:#fbbf24">3.0</td><td>综合画像</td></tr>
+        <tr><td>工作领域</td><td style="color:#fbbf24">2.5</td><td></td></tr>
+        <tr><td>专业</td><td style="color:#fbbf24">2.0</td><td></td></tr>
+        <tr><td>部门</td><td style="color:#fbbf24">1.5</td><td></td></tr>
+        <tr><td>学历</td><td style="color:#fbbf24">1.0</td><td>参考</td></tr>
+      </table>
+      <div style="margin-top:12px;font-size:0.6875rem;color:#6b7280;line-height:1.6">
+        <strong>中文分词：</strong><br>
+        <span class="code">"产品经理" → ["产品经理", "产品", "品经", "经理"]</span><br>
+        字符串二元组（bigram）增强中文部分匹配能力
+      </div>
+    </div>
+    <div>
+      <h4><span class="dot" style="background:#22c55e"></span> 向量语义搜索 · Vector Semantic</h4>
+      <p style="font-size:0.75rem;color:#9ca3af;margin-bottom:12px">理解语义含义，不依赖精确字面匹配</p>
+
+      <div class="embed-visual" style="justify-content:flex-start;flex-direction:column;align-items:flex-start;gap:12px">
+        <div class="emb" style="width:100%;text-align:center">
+          <div class="label">用户查询</div>
+          <div class="val" style="font-size:0.8125rem">"高级产品经理"</div>
+          <div style="font-size:0.625rem;color:#6b7280;margin-top:4px">→ Bailian API → 256 维向量</div>
+        </div>
+        <div class="arr" style="text-align:center;width:100%">↓ cos 相似度 ↓</div>
+        <div style="font-size:0.75rem;color:#d1d5db;line-height:1.8">
+          <span style="color:#4ade80">0.89</span> G004222 马娟 · 产品经理<br>
+          <span style="color:#a3e635">0.82</span> G010956 吴杰 · 高级产品经理<br>
+          <span style="color:#a3e635">0.78</span> G003421 刘洋 · 产品负责人<br>
+          <span style="color:#fbbf24">0.65</span> G005678 张伟 · 项目经理<br>
+          <span style="color:#fbbf24">0.61</span> G007890 陈明 · 需求分析师
+        </div>
+      </div>
+
+      <div style="margin-top:16px;padding:12px;background:rgba(34,197,94,0.05);border-radius:8px;border:0.5px solid rgba(34,197,94,0.15)">
+        <p style="font-size:0.6875rem;color:#9ca3af;line-height:1.7">
+          <strong style="color:#4ade80">关键优势：</strong><br>
+          即使数据库中写的是"产品负责人"而非"产品经理"，向量搜索也能匹配 — 两者在 256 维语义空间中距离很近。每个候选人的文本画像在系统启动时就预处理为向量并缓存，搜索时只需计算查询向量的相似度。
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Layer 3 Deep Dive -->
+  <div class="section-title">
+    <h2>Layer 3 详解：LLM 重排序</h2>
+    <p>大模型像资深 HR 一样阅读理解 100 个候选人，给出结构化排序</p>
+  </div>
+
+  <div class="flow-chart">
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center;font-size:0.8125rem">
+      <span style="color:#9ca3af">100 候选人摘要</span>
+      <span style="color:#4b5563">→</span>
+      <span style="background:rgba(34,197,94,0.1);border:0.5px solid rgba(34,197,94,0.25);padding:8px 14px;border-radius:8px;color:#4ade80">qwen3.7-plus</span>
+      <span style="color:#4b5563">→</span>
+      <span style="color:#9ca3af">排序 + 评分 + 推荐理由</span>
+      <span style="color:#4b5563">→</span>
+      <span style="color:#4ade80;font-weight:600">Top N 结果</span>
+    </div>
+    <div style="margin-top:16px;font-size:0.75rem;color:#9ca3af;line-height:1.8">
+      <strong style="color:#d1d5db">System Prompt：</strong>
+      <span style="font-family:monospace;color:#6b7280">"你是一个人岗匹配专家。根据岗位需求对候选人进行打分排序。评分维度：技能匹配(30%)、经验匹配(25%)、绩效趋势(20%)、软性素质(15%)、发展潜力(10%)"</span><br><br>
+      <strong style="color:#d1d5db">输入：</strong>岗位需求描述 + 100 位候选人的结构化信息（姓名、部门、岗位、职级、技能、绩效、学历等）<br>
+      <strong style="color:#d1d5db">输出：</strong>JSON 排名列表，每个候选人含 <span class="code">score</span> <span class="code">grade</span> <span class="code">reason</span>
+    </div>
+  </div>
+
+  <!-- Full data flow -->
+  <div class="section-title">
+    <h2>完整数据流</h2>
+    <p>从用户对话到最终结果，端到端架构总览</p>
+  </div>
+
+  <div class="arch-diagram">
+    <div class="arch-row">
+      <div class="arch-label">输入</div>
+      <div class="arch-content">
+        <div class="arch-box bold">💬 "帮我找高级产品经理"</div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box">前端 WebSocket</div>
+      </div>
+    </div>
+    <div class="arch-divider"></div>
+    <div class="arch-row">
+      <div class="arch-label">路由</div>
+      <div class="arch-content">
+        <div class="arch-box">NLP 意图解析</div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box highlight">intent:<br>position_to_person</div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box">MatchAgent</div>
+      </div>
+    </div>
+    <div class="arch-divider"></div>
+    <div class="arch-row">
+      <div class="arch-label">Layer 1</div>
+      <div class="arch-content">
+        <div class="arch-box">规则过滤</div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box bold">11,000 → 8,000</div>
+      </div>
+    </div>
+    <div class="arch-divider"></div>
+    <div class="arch-row">
+      <div class="arch-label">Layer 2</div>
+      <div class="arch-content">
+        <div class="arch-box" style="border-color:rgba(245,158,11,0.3);background:rgba(245,158,11,0.06)">关键词<br>分词+加权</div>
+        <div class="arch-arrow">⊕</div>
+        <div class="arch-box" style="border-color:rgba(34,197,94,0.3);background:rgba(34,197,94,0.06)">向量语义<br>embed→cos</div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box bold">8,000 → 100</div>
+      </div>
+    </div>
+    <div class="arch-divider"></div>
+    <div class="arch-row">
+      <div class="arch-label">Layer 3</div>
+      <div class="arch-content">
+        <div class="arch-box highlight">qwen3.7-plus<br>精排+打分</div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box bold">100 → Top N</div>
+      </div>
+    </div>
+    <div class="arch-divider"></div>
+    <div class="arch-row">
+      <div class="arch-label">输出</div>
+      <div class="arch-content">
+        <div class="arch-box" style="border-color:rgba(34,197,94,0.5);background:rgba(34,197,94,0.1);color:#4ade80;font-weight:600">🎯 候选人卡片 + 评级 + 推荐理由</div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box">WebSocket<br>逐条推送</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tech Stack -->
+  <div class="section-title">
+    <h2>技术栈</h2>
+  </div>
+  <div class="tech-stack">
+    <div class="tech"><span class="t-dot" style="background:#22c55e"></span> Starlette (WebSocket)</div>
+    <div class="tech"><span class="t-dot" style="background:#fbbf24"></span> qwen3.7-plus</div>
+    <div class="tech"><span class="t-dot" style="background:#22c55e"></span> text-embedding-v4</div>
+    <div class="tech"><span class="t-dot" style="background:#3b82f6"></span> Pandas + NumPy</div>
+    <div class="tech"><span class="t-dot" style="background:#8b5cf6"></span> Render.com</div>
+    <div class="tech"><span class="t-dot" style="background:#ec4899"></span> Shadow DOM Widget</div>
+    <div class="tech"><span class="t-dot" style="background:#f97316"></span> 阿里云百炼</div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <p>AI 人才发现助手 · <a href="https://github.com/AnGitCC/talent-discovery-widget" target="_blank">GitHub</a> · <a href="https://talent-discovery-widget.onrender.com" target="_blank">在线演示</a></p>
+    <p style="margin-top:4px">Goertek · 2026</p>
+  </div>
+</div>
+</body>
+</html>

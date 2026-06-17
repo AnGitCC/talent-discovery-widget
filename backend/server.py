@@ -81,10 +81,15 @@ async def ws_endpoint(ws: WebSocket):
             pass
 
 
+async def architecture(request):
+    return FileResponse(str(Path(DEMO_DIR) / "architecture.html"))
+
+
 routes = [
     Route("/", root),
     Mount("/widget", app=StaticFiles(directory=WIDGET_DIR)),
     Route("/demo", demo),
+    Route("/architecture", architecture),
     Route("/api/health", health),
     Route("/api/export/{session_id}", export_excel),
     WebSocketRoute("/ws/{session_id}", ws_endpoint),
