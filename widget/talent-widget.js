@@ -45,6 +45,7 @@ class TalentWidget {
       var share = e.target.closest('.share-report-btn'); if (share) { self._shareReport(); return; }
       var dl = e.target.closest('.download-report-btn'); if (dl) { self._downloadReport(); return; }
       var prt = e.target.closest('.print-btn'); if (prt) { self._printReport(); return; }
+      var dl = e.target.closest('.download-report-btn'); if (dl) { self._printReport(); return; }
     });
     var panel = $('chat-panel'), chatCol = $('chat-column'), dragging = false, startY = 0, startTop = 0, startX = 0, startW = 0;
     $('grip-top').addEventListener('mousedown', function(e) { if (panel.classList.contains('fullscreen')) return; e.preventDefault(); dragging = true; startY = e.clientY; startTop = panel.offsetTop; });
@@ -165,7 +166,7 @@ class TalentWidget {
       '<div class="report-section"><h4>综合评估</h4><p>'+_esc(data.explanation||'暂无')+'</p></div>'+
       '<div class="report-section" style="display:flex;gap:24px;"><div style="flex:1;"><h4>优势</h4><ul>'+_li(data.strengths)+'</ul></div><div style="flex:1;"><h4>待发展项</h4><ul>'+_li(data.weaknesses)+'</ul></div></div>'+
       '<div class="report-section"><h4>发展建议</h4><ul>'+_li(data.suggestions)+'</ul></div>'+
-      '<div style="margin-top:20px;display:flex;gap:8px;"><button class="action-btn share-report-btn">分享报告</button><button class="action-btn download-report-btn">下载报告</button><button class="action-btn secondary print-btn">打印</button></div>';
+      '<div style="margin-top:20px;display:flex;gap:8px;"><button class="action-btn share-report-btn">分享报告</button><button class="action-btn download-report-btn">下载报告</button></div>';
   }
 
   _renderCompare(data) {
@@ -205,7 +206,7 @@ class TalentWidget {
       '<table class="cmp-table"><thead><tr>'+hdr+'</tr></thead><tbody>'+gradeRow+scoreRow+radarRow+secHdr+tRows+sRow+dRows+'</tbody></table>'+
       aiSection+
       '<div class="report-section" style="margin-top:24px;"><h4>综合对比结论</h4><p style="white-space:pre-wrap;line-height:1.8;">'+_esc(data.analysis||'暂无')+'</p></div>'+
-      '<div style="margin-top:20px;display:flex;gap:8px;"><button class="action-btn share-report-btn">分享报告</button><button class="action-btn download-report-btn">下载报告</button><button class="action-btn secondary print-btn">打印</button></div>';
+      '<div style="margin-top:20px;display:flex;gap:8px;"><button class="action-btn share-report-btn">分享报告</button><button class="action-btn download-report-btn">下载报告</button></div>';
   }
 
   _renderProfile(data) {
