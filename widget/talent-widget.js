@@ -248,7 +248,7 @@ class TalentWidget {
     '@media print{@page{size:A4;margin:12mm}body{margin:0;padding:0;max-width:none}}';
   var html='<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>'+fname+'</title><style>'+css+'</style></head><body><div style="background:#fff;padding:24px">'+fp.innerHTML+'</div></body></html>';
   var self=this; self._addBotMsg('正在生成 PDF...');
-  var pdfUrl=self.wsUrl.replace(/\/ws\/.*$/,'').replace('wss://','https://').replace('ws://','http://')+'/api/pdf';
+  var pdfUrl='/api/pdf';
   fetch(pdfUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({html:html,filename:fname})})
     .then(function(r){if(!r.ok)return r.json().then(function(j){throw new Error(j.error||'PDF failed')});return r.blob();})
     .then(function(b){var u=URL.createObjectURL(b);var a=document.createElement('a');a.href=u;a.download=fname+'.pdf';document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(function(){URL.revokeObjectURL(u)},3000);self._addBotMsg(fname+' PDF 已下载');})
