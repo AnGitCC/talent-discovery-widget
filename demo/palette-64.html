@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta charset="UTF-8"><title>64色调色板</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,PingFang SC,sans-serif;padding:24px;background:#f5f5f5}
+h1{font-size:16px;color:#1A2B4C;margin-bottom:2px}
+.sub{font-size:11px;color:#86868B;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;max-width:820px}
+.chip{border-radius:8px;padding:6px 4px;text-align:center;font-size:10px;font-weight:500}
+</style>
+</head>
+<body>
+<h1>64色调色板 — 高饱和粉彩，每个色更明显</h1>
+<p class="sub">bg: 饱和度68-88% 亮度84-87% / fg: 饱和度70-94% 亮度22-25%</p>
+<div class="grid" id="grid"></div>
+<script>
+var families=[
+  {h:210,n:10},{h:175,n:10},{h:155,n:10},{h:48,n:8},{h:25,n:8},{h:85,n:6},{h:195,n:6},{h:5,n:3},{h:270,n:2},{h:335,n:1}
+];
+var p=[];
+for(var f=0;f<families.length;f++){
+  var fam=families[f];
+  for(var v=0;v<fam.n;v++){
+    var hue=fam.h+(v-fam.n/2)*3;
+    var bgSat=68+(v%3)*10;
+    var bgLight=87-(v%3)*3;
+    var fgSat=70+(v%3)*12;
+    var fgLight=22+(v%2)*3;
+    p.push({bg:'hsl('+hue+','+bgSat+'%,'+bgLight+'%)',fg:'hsl('+hue+','+fgSat+'%,'+fgLight+'%)'});
+  }
+}
+var grid=document.getElementById('grid');
+p.forEach(function(c,i){
+  var d=document.createElement('div');d.className='chip';
+  d.style.background=c.bg;d.style.color=c.fg;
+  d.textContent=i;
+  grid.appendChild(d);
+});
+</script>
+</body>
+</html>

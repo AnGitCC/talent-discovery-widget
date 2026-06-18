@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>卡片设计优化 — 三方案对比</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'PingFang SC','Microsoft YaHei','Inter',sans-serif;background:#F0F2F5;padding:28px}
+h1{font-size:18px;margin-bottom:2px;color:#1D1D1F}
+.sub{color:#86868B;font-size:12px;margin-bottom:20px}
+.row{display:flex;gap:20px;flex-wrap:wrap}
+.col{flex:1;min-width:370px}
+.col h3{font-size:13px;color:#1A2B4C;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #E5E5EA}
+.cards{display:flex;flex-direction:column;gap:10px}
+
+/* ═══ Common ═══ */
+.chip{font-size:10px;border-radius:8px;padding:3px 8px;white-space:nowrap;border:none;font-weight:500;line-height:1.3}
+
+/* ═══ V1: Current ═══ */
+.card-v1{background:#fff;border-radius:8px;border:0.5px solid #E5E5EA;display:flex;overflow:hidden}
+.card-v1 .wrap{width:64px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px;gap:4px}
+.card-v1 .av{width:48px;height:60px;border-radius:8px;object-fit:cover;object-position:center top}
+.card-v1 .sc{font-size:18px;font-weight:300;color:#22c55e}
+.card-v1 .bd{flex:1;min-width:0;padding:12px 14px;display:flex;flex-direction:column}
+.card-v1 .row1{display:flex;align-items:flex-start;justify-content:space-between}
+.card-v1 .lf{flex:1;min-width:0}
+.card-v1 .br{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.card-v1 .g{display:inline-block;font-weight:600;font-size:10px;padding:2px 6px;border-radius:3px}
+.card-v1 .g.S{background:#22c55e;color:#fff}
+.card-v1 .g.A{background:rgba(34,197,94,.08);color:#16a34a;border:0.5px solid rgba(34,197,94,.3)}
+.card-v1 .g.B{background:transparent;color:#1D1D1F;border:0.5px solid #E5E5EA}
+.card-v1 .n{font-size:13px;font-weight:600;color:#1D1D1F}
+.card-v1 .m{font-size:11px;color:#86868B;margin-top:2px}
+.card-v1 .chs{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.card-v1 .act{display:flex;flex-direction:column;gap:4px;flex-shrink:0;margin-left:8px}
+.card-v1 .btn{background:transparent;border:0.5px solid #E5E5EA;border-radius:6px;padding:4px 10px;font-size:11px;color:#86868B;cursor:pointer;white-space:nowrap}
+
+/* ═══ V2: Compact horizontal ═══ */
+.card-v2{background:#fff;border-radius:10px;border:1px solid rgba(0,0,0,0.05);display:flex;padding:12px 16px;gap:14px;align-items:stretch;transition:all 0.15s ease}
+.card-v2:hover{border-color:rgba(34,197,94,0.15);box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.card-v2 .av-col{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;min-width:56px}
+.card-v2 .av{width:52px;height:65px;border-radius:10px;object-fit:cover;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
+.card-v2 .sc{font-size:16px;font-weight:500;color:#22C55E}
+.card-v2 .bd{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:6px}
+.card-v2 .hdr{display:flex;align-items:center;gap:8px}
+.card-v2 .n{font-size:14px;font-weight:600;color:#1D1D1F}
+.card-v2 .g{width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.card-v2 .g.S{background:#22C55E;color:#FFF}
+.card-v2 .g.A{background:rgba(34,197,94,0.08);color:#16A34A;border:1px solid rgba(34,197,94,0.25)}
+.card-v2 .g.B{background:rgba(100,100,100,0.06);color:#666}
+.card-v2 .m{font-size:11px;color:#86868B;line-height:1.3}
+.card-v2 .chs{display:flex;gap:6px;flex-wrap:wrap}
+.card-v2 .act{display:flex;align-items:center;gap:6px;flex-shrink:0;margin-left:auto}
+.card-v2 .btn{font-size:11px;color:#22C55E;background:rgba(34,197,94,0.05);border:0.5px solid rgba(34,197,94,0.2);border-radius:6px;padding:5px 12px;cursor:pointer;white-space:nowrap;transition:all 0.15s}
+.card-v2 .btn:hover{background:#22C55E;color:#FFF}
+
+/* ═══ V3: Left-bar design ═══ */
+.card-v3{background:#fff;border-radius:10px;border:1px solid rgba(0,0,0,0.05);display:flex;overflow:hidden;transition:all 0.15s ease}
+.card-v3:hover{border-color:rgba(34,197,94,0.12);box-shadow:0 2px 12px rgba(0,0,0,0.06)}
+.card-v3 .lbar{width:72px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding:14px 0 12px;gap:4px;background:linear-gradient(180deg,rgba(34,197,94,0.03) 0%,rgba(255,255,255,0) 100%)}
+.card-v3 .av{width:52px;height:65px;border-radius:10px;object-fit:cover;box-shadow:0 2px 6px rgba(0,0,0,0.12)}
+.card-v3 .sc{font-size:24px;font-weight:600;color:#22C55E;line-height:1}
+.card-v3 .sc-label{font-size:10px;color:#86868B}
+.card-v3 .bd{flex:1;min-width:0;padding:14px 16px;display:flex;align-items:center;gap:14px}
+.card-v3 .info{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.card-v3 .hdr{display:flex;align-items:center;gap:8px}
+.card-v3 .n{font-size:14px;font-weight:600;color:#1D1D1F}
+.card-v3 .g{width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.card-v3 .g.S{background:#22C55E;color:#FFF}
+.card-v3 .g.A{background:rgba(34,197,94,0.08);color:#16A34A;border:1px solid rgba(34,197,94,0.25)}
+.card-v3 .g.B{background:rgba(100,100,100,0.06);color:#666}
+.card-v3 .m{font-size:11px;color:#86868B;line-height:1.3}
+.card-v3 .chs{display:flex;gap:6px;flex-wrap:wrap}
+.card-v3 .act{flex-shrink:0}
+.card-v3 .btn{font-size:12px;color:#22C55E;background:rgba(34,197,94,0.05);border:0.5px solid rgba(34,197,94,0.2);border-radius:6px;padding:6px 14px;cursor:pointer;white-space:nowrap;transition:all 0.15s}
+.card-v3 .btn:hover{background:#22C55E;color:#FFF}
+</style>
+</head>
+<body>
+<h1>卡片设计 — 三方案对比</h1>
+<p class="sub">V1:当前 | V2:紧凑水平 | V3:左侧信息栏</p>
+<div class="row">
+  <div class="col"><h3>V1 当前</h3><div class="cards" id="v1"></div></div>
+  <div class="col"><h3>V2 紧凑</h3><div class="cards" id="v2"></div></div>
+  <div class="col"><h3>V3 左侧栏</h3><div class="cards" id="v3"></div></div>
+</div>
+
+<script>
+var D=[
+  {id:'G000360',name:'胡芳',gender:'女',grade:'S',score:'99',dept:'研发部',pos:'产品经理',level:'T5',edu:'本科',skills:['机器学习','MySQL','Excel','数据分析'],tags:['高成长员工','90后','山东潍坊']},
+  {id:'G000072',name:'朱娜',gender:'女',grade:'A',score:'88',dept:'营销部',pos:'市场总监',level:'M6',edu:'硕士',skills:['品牌管理','数字营销'],tags:['80后','北京朝阳','领导力']},
+  {id:'G000250',name:'李伟',gender:'男',grade:'B',score:'73',dept:'工程部',pos:'高级工程师',level:'T8',edu:'本科',skills:['Python','云计算','Docker','K8s'],tags:['85后','深圳','NPI项目']},
+  {id:'G000180',name:'张芳芳',gender:'女',grade:'A',score:'82',dept:'财务部',pos:'财务经理',level:'T6',edu:'硕士',skills:['财务报表','税务筹划'],tags:['90后','杭州','CPA']},
+];
+
+function hsh(s){var h=0;for(var i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0}return Math.abs(h)}
+function _tc(t){var h=hsh(t);var u=Math.abs(h)%360,s=Math.abs((h*31+7)%26)+50;return{bg:'hsl('+u+','+s+'%,85%)',fg:'hsl('+u+','+(s+10)+'%,24%)',b:'hsl('+u+','+s+'%,60%)'}}
+
+// ── Curated palette (tag by index) ──
+var P=[['#DBEAFE','#1E40AF'],['#D1FAE5','#047857'],['#FEE2E2','#B91C1C'],['#E0E7FF','#3730A3'],['#FFEDD5','#C2410C'],['#F3E8FF','#7E22CE'],['#CCFBF1','#0F766E'],['#FCE7F3','#BE185D']];
+
+document.querySelectorAll('[id^=v]').forEach(function(el){el.innerHTML=''});
+
+D.forEach(function(d){
+  var g=d.grade, all=d.skills.concat(d.tags);
+  var ch1=all.map(function(t){var c=_tc(t);return'<span class="chip" style="background:'+c.bg+';color:'+c.fg+';border:0.5px solid '+c.b+'">'+t+'</span>'}).join('');
+  var ch2=all.map(function(t,i){var c=P[i%P.length];return'<span class="chip" style="background:'+c[0]+';color:'+c[1]+'">'+t+'</span>'}).join('');
+  var av=d.gender==='女'?'avatar-f-':'avatar-m-';
+  var ni=(hsh(d.id)%(d.gender==='女'?20:25))+1, ns=ni<10?'0'+ni:''+ni;
+  var avurl='/widget/avatars/'+av+ns+'.png';
+
+  // V1
+  document.getElementById('v1').innerHTML+='<div class="card-v1"><div class="wrap"><img class="av" src="'+avurl+'"><span class="sc">'+d.score+'</span></div><div class="bd"><div class="row1"><div class="lf"><div class="br"><span class="g '+g+'">'+g+'</span><span class="n">'+d.name+'</span></div><div class="m">'+d.dept+' · '+d.pos+' · '+d.level+' · '+d.edu+'</div><div class="chs">'+ch1+'</div></div><div class="act"><button class="btn">人才画像 →</button></div></div></div></div>';
+
+  // V2
+  document.getElementById('v2').innerHTML+='<div class="card-v2"><div class="av-col"><img class="av" src="'+avurl+'"><span class="sc">'+d.score+'</span></div><div class="bd"><div class="hdr"><span class="n">'+d.name+'</span><span class="g '+g+'">'+g+'</span></div><div class="m">'+d.dept+' · '+d.pos+' · '+d.level+' · '+d.edu+'</div><div class="chs">'+ch2+'</div></div><div class="act"><button class="btn">人才画像</button></div></div>';
+
+  // V3
+  document.getElementById('v3').innerHTML+='<div class="card-v3"><div class="lbar"><img class="av" src="'+avurl+'"><span class="sc">'+d.score+'</span><span class="sc-label">匹配度</span></div><div class="bd"><div class="info"><div class="hdr"><span class="n">'+d.name+'</span><span class="g '+g+'">'+g+'</span></div><div class="m">'+d.dept+' · '+d.pos+' · '+d.level+' · '+d.edu+'</div><div class="chs">'+ch2+'</div></div><div class="act"><button class="btn">人才画像</button></div></div></div>';
+});
+</script>
+</body>
+</html>

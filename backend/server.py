@@ -10,7 +10,7 @@ sys.path.insert(0, str(_backend_dir))
 
 from starlette.applications import Starlette
 from starlette.routing import Route, WebSocketRoute, Mount
-from starlette.responses import FileResponse, JSONResponse, RedirectResponse
+from starlette.responses import FileResponse, JSONResponse, RedirectResponse, Response
 from starlette.staticfiles import StaticFiles
 from starlette.websockets import WebSocket, WebSocketDisconnect
 from starlette.middleware.cors import CORSMiddleware
@@ -103,6 +103,28 @@ async def architecture(request):
     return FileResponse(str(Path(DEMO_DIR) / "architecture.html"))
 
 
+async def pdf_export(request):
+    """Convert posted HTML to PDF and return as download."""
+    import json
+    from concurrent.futures import ThreadPoolExecutor
+    body = await request.body()
+    data = json.loads(body)
+    html_content = data.get("html", "")
+    filename = data.get("filename", "人才报告")
+    try:
+        from weasyprint import HTML
+        def _render():
+            return HTML(string=html_content).write_pdf()
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            loop = __import__('asyncio').get_running_loop()
+            pdf_bytes = await loop.run_in_executor(pool, _render)
+    except Exception as e:
+        print(f"[PDF] WeasyPrint failed: {e}, falling back")
+        return JSONResponse({"error": f"PDF generation failed: {e}"}, status_code=500)
+    return Response(pdf_bytes, media_type="application/pdf",
+                    headers={"Content-Disposition": f'attachment; filename="{filename}.pdf"'})
+
+
 routes = [
     Route("/", root),
     Mount("/widget", app=StaticFiles(directory=WIDGET_DIR)),
@@ -112,6 +134,7 @@ routes = [
     Route("/api/health", health),
     Route("/api/debug", debug_status),
     Route("/api/export/{session_id}", export_excel),
+    Route("/api/pdf", pdf_export, methods=["POST"]),
     WebSocketRoute("/ws/{session_id}", ws_endpoint),
 ]
 
