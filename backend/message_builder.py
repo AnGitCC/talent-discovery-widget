@@ -64,12 +64,6 @@ async def _handle_position_to_person(ctx, params, user_text, ids):
         if _m:
             top_n = int(_m.group(1))
 
-    store = _ensure_store()
-    if store.df is None or len(store.records) == 0:
-        yield {"type": "text", "content": "数据加载失败，请刷新页面重试"}
-        yield {"type": "done"}
-        return
-
     result = MatchAgent().match_position_to_person(position_name=pos_name, top_n=top_n)
     candidates = result.get("candidates", [])
     ctx.cached_candidates = candidates

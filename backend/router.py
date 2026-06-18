@@ -102,8 +102,7 @@ def quick_match(text: str, ctx) -> IntentResult | None:
 def resolve_employee(text: str) -> dict | None:
     from data.talent_store import get_store
     store = get_store()
-    if store.df is None or len(store.records) == 0:
-        store.load(embedding_fn=None)
+    # Store is pre-loaded at startup — no load() call needed
 
     id_match = re.search(r'G\d{6}', text)
     if id_match:

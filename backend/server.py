@@ -115,6 +115,15 @@ routes = [
 app = Starlette(routes=routes)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
+# ── Eager-load talent data at startup ──
+from data.talent_store import get_store
+_store = get_store()
+try:
+    _store.load(embedding_fn=None)
+    print(f"✓ Loaded {len(_store.records)} talent records at startup")
+except Exception as e:
+    print(f"✗ Failed to load talent data: {e}")
+
 
 if __name__ == "__main__":
     import uvicorn

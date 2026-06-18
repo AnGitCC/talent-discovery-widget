@@ -25,7 +25,13 @@ class TalentStore:
     def load(self, provider: DataProvider | None = None, embedding_fn=None):
         """Load records from the given provider (or default from config)."""
         self.provider = provider or get_provider()
-        self.records = self.provider.fetch_all()
+        try:
+            self.records = self.provider.fetch_all()
+        except Exception as e:
+            print(f"TalentStore.load() FAILED: {e}")
+            import traceback
+            traceback.print_exc()
+            self.records = []
         self._id_to_index = {
             str(r.get("工号", "")): i for i, r in enumerate(self.records)
         }
