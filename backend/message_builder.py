@@ -324,12 +324,8 @@ async def _handle_compare(ctx, params, user_text, ids):
         # Stream LLM response — user sees progress in real time
         from llm.backend import get_llm
         llm = get_llm()
-        print(f"[COMPARE] Starting LLM stream, backend={type(llm).__name__}, model=deepseek-ai/DeepSeek-V4-Pro")
-        chunk_count = 0
         async for chunk in llm.chat_stream(messages, model="deepseek-ai/DeepSeek-V4-Pro", timeout=120, temperature=0.1):
             raw_text += chunk
-            chunk_count += 1
-        print(f"[COMPARE] LLM stream complete: {chunk_count} content chunks, {len(raw_text)} chars total. First 300 chars: {raw_text[:300]}")
     except Exception as e:
         import traceback
         print(f"[COMPARE] LLM stream FAILED: {e}")
@@ -339,33 +335,18 @@ async def _handle_compare(ctx, params, user_text, ids):
     if raw_text:
         try:
             data = json.loads(raw_text)
-            print(f"[COMPARE] Direct JSON parse OK, per_person count: {len(data.get('profiles', []))}")
-        except Exception as e1:
-            print(f"[COMPARE] Direct JSON parse failed: {e1}")
+        except Exception:
             m = _re.search(r'```(?:json)?\s*\n?(.*?)\n?```', raw_text, re.DOTALL)
             if m:
-                try:
-                    data = json.loads(m.group(1))
-                    print(f"[COMPARE] Code-fence JSON parse OK, per_person count: {len(data.get('profiles', []))}")
-                except Exception as e2:
-                    print(f"[COMPARE] Code-fence JSON parse failed: {e2}")
-                    data = {}
+                try: data = json.loads(m.group(1))
+                except Exception: data = {}
             else:
                 m2 = _re.search(r'\{.*\}', raw_text, re.DOTALL)
-                if m2:
-                    try:
-                        data = json.loads(m2.group())
-                        print(f"[COMPARE] Regex JSON parse OK, per_person count: {len(data.get('profiles', []))}")
-                    except Exception as e3:
-                        print(f"[COMPARE] Regex JSON parse failed: {e3}")
-                        data = {}
-                else:
-                    print(f"[COMPARE] No JSON pattern found in response")
-                    data = {}
+                data = json.loads(m2.group()) if m2 else {}
         overall = data.get("overall_comparison", "")
         per_person = data.get("profiles", [])
     else:
-        print(f"[COMPARE] raw_text is EMPTY — LLM returned no content")
+        print("[COMPARE] LLM returned empty response — using fallback")
 
     # Fallback: fill missing per_person
     if len(per_person) < len(profiles_raw):
