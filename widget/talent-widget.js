@@ -74,7 +74,7 @@ class TalentWidget {
 
   _addCard(data) {
     var g = data.grade || 'B'; this.messages.push({ role: 'bot', cardData: data });
-    this._app('<div class="message"><div class="msg-avatar bot"><img class="btn-icon-img" src="/widget/avatar.png" alt="AI"></div><div class="result-card" data-id="'+(data.id||'')+'"><div class="card-top"><div class="card-avatar-wrap"><img class="card-avatar" src="'+_avatarUrl(data.id)+'" alt="" onerror="this.style.display=\'none\'"></div><div class="card-body"><div class="card-top-inner"><input type="checkbox" class="card-checkbox" data-id="'+(data.id||'')+'"><div class="card-left"><div class="badge-row"><span class="grade-badge grade-'+g+'">'+g+'</span><span class="card-name">'+_esc(data.name||'')+'</span><span class="card-score">'+(data.score||'')+'</span></div><div class="card-meta">'+_esc(data.department||'')+' · '+_esc(data.position||'')+' · '+_esc(data.level||'')+' · '+_esc(data.education||'')+' · '+_esc(data.performance||'')+'</div><div class="card-chips">'+_chips(data.skills)+_chips(data.tags)+'</div></div><div class="card-actions"><button class="card-btn detail-btn" data-id="'+(data.id||'')+'">详情 →</button></div></div>'+(data.reason?'<div style="font-size:11px;color:var(--text-secondary);margin-top:6px;">'+_esc(data.reason)+'</div>':'')+'</div></div></div></div>');
+    this._app('<div class="message"><div class="msg-avatar bot"><img class="btn-icon-img" src="/widget/avatar.png" alt="AI"></div><div class="result-card" data-id="'+(data.id||'')+'"><div class="card-top"><div class="card-avatar-wrap"><img class="card-avatar" src="'+_avatarUrl(data.id,data.gender)+'" alt="" onerror="this.style.display=\'none\'"></div><div class="card-body"><div class="card-top-inner"><input type="checkbox" class="card-checkbox" data-id="'+(data.id||'')+'"><div class="card-left"><div class="badge-row"><span class="grade-badge grade-'+g+'">'+g+'</span><span class="card-name">'+_esc(data.name||'')+'</span><span class="card-score">'+(data.score||'')+'</span></div><div class="card-meta">'+_esc(data.department||'')+' · '+_esc(data.position||'')+' · '+_esc(data.level||'')+' · '+_esc(data.education||'')+' · '+_esc(data.performance||'')+'</div><div class="card-chips">'+_chips(data.skills)+_chips(data.tags)+'</div></div><div class="card-actions"><button class="card-btn detail-btn" data-id="'+(data.id||'')+'">详情 →</button></div></div>'+(data.reason?'<div style="font-size:11px;color:var(--text-secondary);margin-top:6px;">'+_esc(data.reason)+'</div>':'')+'</div></div></div></div>');
   }
 
   _addActions(actions) {
@@ -124,7 +124,7 @@ class TalentWidget {
     // Info row helper
     function _info(label, val) { return val ? '<div class="info-row"><span class="info-label">'+_esc(label)+'</span><span class="info-val">'+_esc(String(val))+'</span></div>' : ''; }
     this.shadow.getElementById('fullscreen-panel').innerHTML =
-      '<div class="report-header"><img class="report-avatar" src="'+_avatarUrl(data.id)+'" alt="" onerror="this.style.display=\'none\'"><div class="report-grade"><span class="grade-badge grade-'+g+'" style="font-size:1rem;padding:6px 14px;">'+g+'</span><div class="report-score">'+(data.score||'')+'</div><div style="font-size:0.75rem;color:var(--text-secondary)">综合评分</div></div>'+
+      '<div class="report-header"><img class="report-avatar" src="'+_avatarUrl(data.id,data.gender)+'" alt="" onerror="this.style.display=\'none\'"><div class="report-grade"><span class="grade-badge grade-'+g+'" style="font-size:1rem;padding:6px 14px;">'+g+'</span><div class="report-score">'+(data.score||'')+'</div><div style="font-size:0.75rem;color:var(--text-secondary)">综合评分</div></div>'+
       '<div class="report-info"><div class="report-name">'+_esc(data.name||'')+'</div><div class="report-meta">'+_esc(data.department||'')+' · '+_esc(data.position||'')+' · '+_esc(data.level||'')+'</div>'+
       '<div class="report-meta">'+_esc(data.education||'')+' / '+_esc(data.major||'')+' · 司龄'+(data.tenure||'')+'年 · 绩效'+_esc(data.performance||'')+'</div></div></div>'+
 
@@ -175,7 +175,7 @@ class TalentWidget {
     profiles.forEach(function(p){var d=p.dimensions||{};Object.keys(d).forEach(function(k){if(allDimKeys.indexOf(k)<0)allDimKeys.push(k);});});
     var hasDims=allDimKeys.length>0;
 
-    var hdr='<th class="cmp-label-th">属性</th>'+profiles.map(function(p){return'<th><img class="cmp-avatar" src="'+_avatarUrl(p.id)+'" alt="" onerror="this.style.display=\'none\'"><div>'+_esc(p.name||'')+'</div></th>';}).join('');
+    var hdr='<th class="cmp-label-th">属性</th>'+profiles.map(function(p){return'<th><img class="cmp-avatar" src="'+_avatarUrl(p.id,p.gender)+'" alt="" onerror="this.style.display=\'none\'"><div>'+_esc(p.name||'')+'</div></th>';}).join('');
     var gradeRow='<tr><td class="cmp-label">评级</td>'+profiles.map(function(p){return'<td><span class="grade-badge grade-'+(p.grade||'B')+'">'+(p.grade||'B')+'</span></td>';}).join('')+'</tr>';
     var scoreRow='<tr class="cmp-row-odd"><td class="cmp-label">综合评分</td>'+profiles.map(function(p){return'<td><span class="cmp-score-cell">'+_esc(p.score||'—')+'</span></td>';}).join('')+'</tr>';
     var radarRow='';
@@ -275,7 +275,7 @@ var self=this;setTimeout(function(){w.print();w.close();self._addBotMsg('报告�
 
 /* ── Helpers ── */
 function _esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function _avatarUrl(id){return 'https://api.dicebear.com/9.x/avataaars/svg?seed='+(id||'default');}
+function _avatarUrl(id,gender){var pool=gender==='女'?'f':'m';var count=pool==='f'?20:25;var h=0;for(var i=0;i<(id||'').length;i++){h=((h<<5)-h)+(id||'').charCodeAt(i);h|=0;}var n=(Math.abs(h)%count)+1;var ns=n<10?'0'+n:''+n;return '/widget/avatars/avatar-'+pool+'-'+ns+'.png';}
 function _tagColor(tag){
   // Hash tag name to hue for consistent color per tag
   var h=0;for(var i=0;i<tag.length;i++){h=((h<<5)-h)+tag.charCodeAt(i);h|=0;}

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>AI 生成职业头像预览 — 45张</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,sans-serif;padding:24px;background:#f5f5f5}
+h1{color:#1A2B4C;margin-bottom:4px}
+.sub{color:#86868B;margin-bottom:16px;font-size:13px}
+.section{margin-bottom:28px}
+.section h2{font-size:14px;color:#1A2B4C;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #e0e0e0}
+.grid{display:flex;flex-wrap:wrap;gap:12px}
+.card{text-align:center;width:96px}
+.card img{width:72px;height:90px;border-radius:10px;object-fit:cover;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.1)}
+.card .lbl{font-size:10px;color:#999;margin-top:3px}
+</style>
+</head>
+<body>
+<h1>AI 生成职业头像</h1>
+<p class="sub">真人级亚洲面孔 · 25男(工程师/管理者) + 20女(职场人/应届生) · 每张约70KB</p>
+
+<div class="section"><h2>👨 男性 (25张)</h2><div class="grid" id="male"></div></div>
+<div class="section"><h2>👩 女性 (20张)</h2><div class="grid" id="female"></div></div>
+
+<script>
+const base = '/widget/avatars/';
+for(let i=1;i<=25;i++){
+  let n=i<10?'0'+i:''+i;
+  let d=document.createElement('div');d.className='card';
+  d.innerHTML='<img src="'+base+'avatar-m-'+n+'.png" onerror="this.parentElement.style.display=\'none\'"><div class="lbl">M-'+n+'</div>';
+  document.getElementById('male').appendChild(d);
+}
+for(let i=1;i<=20;i++){
+  let n=i<10?'0'+i:''+i;
+  let d=document.createElement('div');d.className='card';
+  d.innerHTML='<img src="'+base+'avatar-f-'+n+'.png" onerror="this.parentElement.style.display=\'none\'"><div class="lbl">F-'+n+'</div>';
+  document.getElementById('female').appendChild(d);
+}
+</script>
+</body>
+</html>

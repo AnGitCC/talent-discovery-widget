@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>头像风格对比 — 寻找最真实方案</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,sans-serif;padding:32px;background:#f5f5f5}
+h1{color:#1A2B4C;margin-bottom:4px}
+.sub{color:#86868B;margin-bottom:20px;font-size:14px}
+.grid{display:flex;gap:20px;flex-wrap:wrap}
+.col{flex:1;min-width:220px;background:#fff;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.col h2{font-size:15px;margin-bottom:12px;color:#1A2B4C}
+.col .tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;margin-left:6px;background:#e8f5e9;color:#2e7d32}
+.col .tag.bad{background:#ffebee;color:#c62828}
+.col .tag.warn{background:#fff3e0;color:#e65100}
+.face-row{display:flex;gap:10px;margin-bottom:20px}
+.face-card{text-align:center}
+.face-card img{width:72px;height:90px;border-radius:10px;object-fit:cover;border:1px solid #eee}
+.face-card .n{font-size:11px;color:#999;margin-top:4px}
+.desc{font-size:12px;color:#86868B;line-height:1.5}
+</style>
+</head>
+<body>
+<h1>6 种头像风格对比</h1>
+<p class="sub">同一组 ID，不同风格。目标：像真实的人脸照片，不是卡通</p>
+
+<div class="grid" id="grid"></div>
+
+<script>
+const seeds = ['G000001','G000080','G000150','G000220','G000300'];
+const styles = [
+  {name:'avataaars (当前)', url:s=>'https://api.dicebear.com/9.x/avataaars/svg?seed='+s, tag:'卡通', tagCls:'bad'},
+  {name:'lorelei', url:s=>'https://api.dicebear.com/9.x/lorelei/svg?seed='+s, tag:'半写实', tagCls:'warn'},
+  {name:'notionists-neutral', url:s=>'https://api.dicebear.com/9.x/notionists-neutral/svg?seed='+s, tag:'简约', tagCls:''},
+  {name:'micro-animals', url:s=>'https://api.dicebear.com/9.x/fun-emoji/svg?seed='+s, tag:'不适合', tagCls:'bad'},
+  {name:'initials (兜底)', url:s=>'https://ui-avatars.com/api/?name='+s+'&size=128&background=random&color=fff&bold=true', tag:'文字', tagCls:'warn'},
+  {name:'randomuser (AI脸)', url:()=>{const g=['men','women'];const n=Math.abs(hash(seeds[0]))%99;return 'https://randomuser.me/api/portraits/'+g[0]+'/'+n+'.jpg'}, tag:'照片', tagCls:''},
+];
+
+function hash(s){let h=0;for(let i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0}return Math.abs(h)}
+
+const grid = document.getElementById('grid');
+styles.forEach(st => {
+  const col = document.createElement('div'); col.className='col';
+  let h = '';
+  h += '<h2>'+st.name+'<span class="tag '+st.tagCls+'">'+st.tag+'</span></h2>';
+  h += '<div class="face-row">';
+  seeds.forEach((s,i) => {
+    let url;
+    if (st.name === 'randomuser (AI脸)') {
+      const g = i%2===0 ? 'men' : 'women';
+      const n = hash(s) % 99;
+      url = 'https://randomuser.me/api/portraits/'+g+'/'+n+'.jpg';
+    } else {
+      url = st.url(s);
+    }
+    h += '<div class="face-card"><img src="'+url+'" alt="" onerror="this.src=\'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2272%22 height=%2290%22><rect fill=%22%23ddd%22 width=%2272%22 height=%2290%22/><text x=%2236%22 y=%2250%22 text-anchor=%22middle%22 fill=%22%23999%22 font-size=%2212%22>N/A</text></svg>\'"><div class="n">'+s+'</div></div>';
+  });
+  h += '</div>';
+  h += '<p class="desc">'+({
+    'avataaars (当前)':'Sketch 风插画，面部特征偏简单',
+    'lorelei':'半写实矢量风，有光影细节，更像人',
+    'notionists-neutral':'极简商务风，Notion 官方风格',
+    'micro-animals':'纯 emoji，不适合 HR',
+    'initials (兜底)':'纯文字字母，看不出人',
+    'randomuser (AI脸)':'真正 AI 生成人脸照片 ⚠️ 只有100张/性别，多人会撞脸'
+  }[st.name] || '')+'</p>';
+  col.innerHTML = h;
+  grid.appendChild(col);
+});
+</script>
+</body>
+</html>

@@ -86,6 +86,7 @@ async def _handle_position_to_person(ctx, params, user_text, ids):
             "data": {
                 "id": c.get("id"),
                 "name": p.get("姓名", ""),
+                "gender": p.get("性别", ""),
                 "grade": c.get("grade", "B"),
                 "score": _fmt_score(c.get("llm_score", c.get("keyword_score", "-"))),
                 "department": p.get("部门", ""),
@@ -271,6 +272,7 @@ async def _handle_compare(ctx, params, user_text, ids):
         profiles.append({
             "id": p.get("工号", ""),
             "name": p.get("姓名", ""),
+            "gender": p.get("性别", ""),
             "department": p.get("部门", ""),
             "position": p.get("岗位", ""),
             "level": p.get("职级", ""),
