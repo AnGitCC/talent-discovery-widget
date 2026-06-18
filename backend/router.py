@@ -61,12 +61,21 @@ def quick_match(text: str, ctx) -> IntentResult | None:
     """Fast keyword-based intent matching to avoid LLM call for obvious cases."""
     t = text.strip()
 
-    # ── position_to_person: any search-like query, zero LLM cost ──
-    if any(w in t for w in ["找", "搜索", "有没有", "推荐", "候选人", "人才", "帮我"]):
-        pos = "人才"
-        if "找" in t: pos = t.split("找")[-1].strip() or "人才"
-        # Clean number suffix
-        pos = re.sub(r'\s*\d+\s*(个|位|人|名)\s*', '', pos).strip()
+    # ── position_to_person: any search-like query ──
+    if any(w in t for w in ["找", "搜索", "有没有", "推荐", "候选人", "人才", "帮我",
+                              "个", "位", "人", "名", "经验", "产品", "工程", "设计",
+                              "管理", "运营", "销售", "市场", "行政", "财务", "后端", "前端"]):
+        pos = t
+        # Iteratively strip action prefixes (handles "帮我找" → 两轮剥离)
+        while True:
+            _pre = re.sub(r'^(帮我|我要|请|帮忙|给我|找|搜索|推荐|有没有|只要|要)\s*', '', pos).strip()
+            if _pre == pos: break
+            pos = _pre
+        # Remove: quantifier suffix ("6个", "3位")
+        pos = re.sub(r'\s*\d+\s*(个|位|人|名)\s*', ' ', pos).strip()
+        # Remove: experience specs
+        pos = re.sub(r'有\s*\d+\s*年\s*经验的?\s*', '', pos).strip()
+        if not pos or len(pos) < 2: pos = "人才"
         return IntentResult(intent="position_to_person", params={"position": pos}, confidence=0.9)
 
     # ── Context-dependent: compare/report with cached IDs ──
