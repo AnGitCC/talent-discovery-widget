@@ -120,8 +120,10 @@ async def pdf_export(request):
         print(f"[PDF] FAILED: {e}")
         traceback.print_exc()
         return JSONResponse({"error": str(e)}, status_code=500)
+    from urllib.parse import quote
+    safe_fn = quote(filename)
     return Response(pdf_bytes, media_type="application/pdf",
-                    headers={"Content-Disposition": f'attachment; filename="{filename}.pdf"'})
+                    headers={"Content-Disposition": f"attachment; filename*=UTF-8''{safe_fn}.pdf"})
 
 
 routes = [
