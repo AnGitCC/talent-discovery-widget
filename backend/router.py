@@ -53,10 +53,37 @@ def parse_json(text: str) -> dict:
 
 
 def quick_match(text: str, ctx) -> IntentResult | None:
-    """Ultra-fast keyword match — catches obvious patterns before LLM."""
+    """Ultra-fast keyword match — actions first, then search."""
     t = text.strip()
 
-    # position_to_person: explicit search intent
+    # ── COMPARE always wins — "对比"/"比较" is unambiguous ──
+    if "对比" in t or "比较" in t:
+        if ctx and ctx.cached_candidates:
+            ids = [c.get("id") for c in ctx.cached_candidates[:10]]
+            if "前" in t:
+                m = re.search(r'前\s*(\d+)', t)
+                n = int(m.group(1)) if m else 2
+                ids = ids[:n]
+            elif "选中" in t:
+                ids = ctx.selected_ids if ctx.selected_ids else ids[:2]
+            return IntentResult(intent="compare", params={"ids": ids}, confidence=0.9)
+        return IntentResult(intent="compare", params={}, confidence=0.85)
+
+    # ── REPORT / PROFILE ──
+    if any(w in t for w in ["报告", "详情", "看看", "画像", "履历"]):
+        if ctx and ctx.cached_candidates:
+            for c in ctx.cached_candidates:
+                name = c.get("profile", {}).get("姓名", "")
+                if name and name in t:
+                    return IntentResult(intent="report", params={"employee_id": c.get("id")}, confidence=0.9)
+            return IntentResult(intent="report", params={"employee_id": ctx.cached_candidates[0].get("id")}, confidence=0.7)
+        return IntentResult(intent="report", params={}, confidence=0.8)
+
+    # ── EXPORT ──
+    if "导出" in t or "下载" in t:
+        return IntentResult(intent="export", params={"format": "xlsx"}, confidence=0.95)
+
+    # ── SEARCH: only if not action ──
     search_words = ["找", "搜索", "有没有", "推荐", "候选人", "人才", "帮我",
                     "谁是", "哪个", "哪位", "只要", "就要", "给我"]
     has_search = any(w in t for w in search_words)
@@ -72,29 +99,6 @@ def quick_match(text: str, ctx) -> IntentResult | None:
         pos = re.sub(r'有\s*\d+\s*年\s*经验的?\s*', '', pos).strip()
         if not pos or len(pos) < 2: pos = "人才"
         return IntentResult(intent="position_to_person", params={"position": pos}, confidence=0.9)
-
-    # Context-dependent: compare/report with cached candidates
-    if ctx and ctx.cached_candidates:
-        if "对比" in t or "比较" in t:
-            ids = [c.get("id") for c in ctx.cached_candidates[:5]]
-            if "前" in t:
-                m = re.search(r'前\s*(\d+)', t)
-                n = int(m.group(1)) if m else 2
-                ids = ids[:n]
-            elif "选中" in t:
-                ids = ctx.selected_ids if ctx.selected_ids else ids[:2]
-            return IntentResult(intent="compare", params={"ids": ids}, confidence=0.9)
-
-        if "报告" in t or "详情" in t or "看看" in t:
-            for c in ctx.cached_candidates:
-                name = c.get("profile", {}).get("姓名", "")
-                if name and name in t:
-                    return IntentResult(intent="report", params={"employee_id": c.get("id")}, confidence=0.9)
-            if ctx.cached_candidates:
-                return IntentResult(intent="report", params={"employee_id": ctx.cached_candidates[0].get("id")}, confidence=0.7)
-
-        if "导出" in t or "下载" in t:
-            return IntentResult(intent="export", params={"format": "xlsx"}, confidence=0.9)
 
     return None
 
