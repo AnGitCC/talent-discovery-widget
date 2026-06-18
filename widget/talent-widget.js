@@ -248,12 +248,11 @@ class TalentWidget {
     '@media print{@page{size:A4;margin:12mm}body{margin:0;padding:0;max-width:none}}';
   var html='<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>'+fname+'</title><style>'+css+'</style></head><body><div style="background:#fff;padding:24px">'+fp.innerHTML+'</div></body></html>';
   var self=this; self._addBotMsg('正在生成 PDF...');
-  var wsBase=self.wsUrl.replace('/ws/','').replace('wss://','https://').replace('ws://','http://');
-  var pdfUrl=wsBase.replace(/\/+$/,'')+'/api/pdf';
+  var pdfUrl=self.wsUrl.replace(/\/ws\/.*$/,'').replace('wss://','https://').replace('ws://','http://')+'/api/pdf';
   fetch(pdfUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({html:html,filename:fname})})
-    .then(function(r){if(!r.ok)throw new Error('PDF gen failed');return r.blob();})
+    .then(function(r){if(!r.ok)return r.json().then(function(j){throw new Error(j.error||'PDF failed')});return r.blob();})
     .then(function(b){var u=URL.createObjectURL(b);var a=document.createElement('a');a.href=u;a.download=fname+'.pdf';document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(function(){URL.revokeObjectURL(u)},3000);self._addBotMsg(fname+' PDF 已下载');})
-    .catch(function(e){self._addBotMsg('PDF 生成失败，请重试');console.error(e);}); }
+    .catch(function(e){self._addBotMsg('PDF 生成失败: '+e.message);console.error(e);}); }
   _printReport(){var fp=this.shadow.getElementById('fullscreen-panel');var css=':root{--green:#22c55e;--green-dark:#16a34a;--green-ghost:rgba(34,197,94,0.08);--text:#1D1D1F;--text-secondary:#86868B;--bg:#FAFAFA;--border:#E5E5EA;--border-light:#F2F2F7;--white:#fff}*{box-sizing:border-box;margin:0;padding:0}body{font-family:Inter,-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;max-width:1100px;margin:32px auto;padding:0 20px;color:#1D1D1F;line-height:1.7;background:#fff}'+
     'h3{font-weight:600;font-size:1.15rem;margin-bottom:20px;color:#1D1D1F}'+
     '.cmp-table{width:100%;border-collapse:collapse;font-size:0.8125rem;table-layout:fixed;margin-bottom:16px}'+

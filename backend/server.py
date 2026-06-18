@@ -106,21 +106,20 @@ async def architecture(request):
 async def pdf_export(request):
     """Convert posted HTML to PDF and return as download."""
     import json
-    from concurrent.futures import ThreadPoolExecutor
+    import traceback
     body = await request.body()
     data = json.loads(body)
     html_content = data.get("html", "")
     filename = data.get("filename", "人才报告")
     try:
         from weasyprint import HTML
-        def _render():
-            return HTML(string=html_content).write_pdf()
-        with ThreadPoolExecutor(max_workers=1) as pool:
-            loop = __import__('asyncio').get_running_loop()
-            pdf_bytes = await loop.run_in_executor(pool, _render)
+        import asyncio
+        def _render(): return HTML(string=html_content).write_pdf()
+        pdf_bytes = await asyncio.to_thread(_render)
     except Exception as e:
-        print(f"[PDF] WeasyPrint failed: {e}, falling back")
-        return JSONResponse({"error": f"PDF generation failed: {e}"}, status_code=500)
+        print(f"[PDF] FAILED: {e}")
+        traceback.print_exc()
+        return JSONResponse({"error": str(e)}, status_code=500)
     return Response(pdf_bytes, media_type="application/pdf",
                     headers={"Content-Disposition": f'attachment; filename="{filename}.pdf"'})
 
