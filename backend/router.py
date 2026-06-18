@@ -61,8 +61,17 @@ def quick_match(text: str, ctx) -> IntentResult | None:
     """Fast keyword-based intent matching to avoid LLM call for obvious cases."""
     t = text.strip()
 
+    # ── position_to_person: any search-like query, zero LLM cost ──
+    if any(w in t for w in ["找", "搜索", "有没有", "推荐", "候选人", "人才", "帮我"]):
+        pos = "人才"
+        if "找" in t: pos = t.split("找")[-1].strip() or "人才"
+        # Clean number suffix
+        pos = re.sub(r'\s*\d+\s*(个|位|人|名)\s*', '', pos).strip()
+        return IntentResult(intent="position_to_person", params={"position": pos}, confidence=0.9)
+
+    # ── Context-dependent: compare/report with cached IDs ──
     if ctx and ctx.cached_candidates:
-        if any(w in t for w in ["对比", "比较"]):
+        if "对比" in t or "比较" in t:
             ids = [c.get("id") for c in ctx.cached_candidates[:5]]
             if "前" in t:
                 m = re.search(r'前\s*(\d+)', t)
@@ -70,7 +79,7 @@ def quick_match(text: str, ctx) -> IntentResult | None:
                 ids = ids[:n]
             return IntentResult(intent="compare", params={"ids": ids}, confidence=0.9)
 
-        if any(w in t for w in ["报告", "详情", "详细"]):
+        if "报告" in t or "详情" in t:
             for c in ctx.cached_candidates:
                 name = c.get("profile", {}).get("姓名", "")
                 if name and name in t:
@@ -80,6 +89,16 @@ def quick_match(text: str, ctx) -> IntentResult | None:
 
         if "导出" in t or "下载" in t:
             return IntentResult(intent="export", params={"format": "xlsx"}, confidence=0.9)
+
+    # ── Generic intents (no cached data needed) ──
+    if "对比" in t or "比较" in t:
+        return IntentResult(intent="compare", params={}, confidence=0.9)
+
+    if "报告" in t or "详情" in t:
+        return IntentResult(intent="report", params={}, confidence=0.85)
+
+    if "导出" in t or "下载" in t:
+        return IntentResult(intent="export", params={"format": "xlsx"}, confidence=0.95)
 
     return None
 

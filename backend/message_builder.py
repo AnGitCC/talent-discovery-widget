@@ -51,16 +51,23 @@ async def _handle_clarify(ctx, params, user_text, ids):
 
 async def _handle_position_to_person(ctx, params, user_text, ids):
     from agents.match import MatchAgent
+    import asyncio
     pos_name = params.get("position", user_text)
     yield {"type": "text", "content": f"正在搜索匹配「{pos_name}」的候选人..."}
 
-    # Parse user-specified top_n from text (e.g. "前10个", "只要5个", "找3个")
+    # Parse user-specified top_n: "前10个", "只要5个", "找3个", "6个", "8人"
     top_n = int(params.get("top_n", 10))
     _m = _re.search(r'(前|只要|找|要)\s*(\d+)\s*(个|位|人|名)', user_text)
     if _m:
         top_n = int(_m.group(2))
+    else:
+        _m = _re.search(r'(\d+)\s*(个|位|人|名)', user_text)
+        if _m:
+            top_n = int(_m.group(1))
 
-    result = MatchAgent().match_position_to_person(position_name=pos_name, top_n=top_n)
+    # Run matching in thread to yield the event loop and flush "searching..." message
+    loop = asyncio.get_event_loop()
+    result = await loop.run_in_executor(None, lambda: MatchAgent().match_position_to_person(position_name=pos_name, top_n=top_n))
     candidates = result.get("candidates", [])
     ctx.cached_candidates = candidates
 
