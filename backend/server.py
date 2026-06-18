@@ -34,6 +34,22 @@ async def health(request):
     return JSONResponse({"status": "ok"})
 
 
+async def debug_status(request):
+    import json
+    from data.talent_store import get_store
+    store = get_store()
+    records = len(store.records) if store.records else 0
+    loaded = store.df is not None and len(store.df) > 0
+    xlsx = _project_dir / "test_talent_data_400_cn.xlsx"
+    return JSONResponse({
+        "records": records,
+        "loaded": loaded,
+        "xlsx_exists": xlsx.exists(),
+        "xlsx_path": str(xlsx),
+        "cwd_files": [str(p.name) for p in _project_dir.glob("*.xlsx")],
+    })
+
+
 async def export_excel(request):
     from backend.utils.export import export_candidates_excel
     session_id = request.path_params.get("session_id", "")
@@ -91,6 +107,7 @@ routes = [
     Route("/demo", demo),
     Route("/architecture", architecture),
     Route("/api/health", health),
+    Route("/api/debug", debug_status),
     Route("/api/export/{session_id}", export_excel),
     WebSocketRoute("/ws/{session_id}", ws_endpoint),
 ]
