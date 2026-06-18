@@ -45,18 +45,21 @@ class TalentStore:
         from pathlib import Path
         from utils.config import ROOT_DIR
 
+        from utils.config import BAILIAN_EMBED_MODEL
         cache_path = ROOT_DIR / ".embedding_cache.pkl"
-        # Check if cache exists and is for the right number of records
         if cache_path.exists():
             try:
                 cached = pickle.loads(cache_path.read_bytes())
-                if cached.get("count") == len(self.records):
+                # Invalidate cache if model changed (different dimensions) or record count differs
+                if cached.get("model") == BAILIAN_EMBED_MODEL and cached.get("count") == len(self.records):
                     self._embeddings = cached["embeddings"]
                     self._embedding_ids = cached["ids"]
-                    print(f"Loaded {len(self.records)} embeddings from cache")
+                    print(f"Loaded {len(self.records)} embeddings from cache (model={BAILIAN_EMBED_MODEL})")
                     return
-            except Exception:
-                pass
+                else:
+                    print(f"Cache stale (model={cached.get('model')}!={BAILIAN_EMBED_MODEL} or count mismatch), rebuilding...")
+            except Exception as e:
+                print(f"Cache load failed: {e}, rebuilding...")
 
         print(f"Building embeddings for {len(self.records)} records (this may take a while)...")
         texts = [build_text_profile(r) for r in self.records]
@@ -68,6 +71,7 @@ class TalentStore:
         try:
             cache_path.write_bytes(pickle.dumps({
                 "count": len(self.records),
+                "model": BAILIAN_EMBED_MODEL,
                 "embeddings": self._embeddings,
                 "ids": self._embedding_ids,
             }))
