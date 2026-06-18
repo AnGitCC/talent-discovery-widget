@@ -275,7 +275,7 @@ var self=this;setTimeout(function(){w.print();w.close();self._addBotMsg('报告�
 
 /* ── Helpers ── */
 function _esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function _avatarUrl(id){return 'https://api.dicebear.com/9.x/personas/svg?seed='+(id||'default');}
+function _avatarUrl(id){return 'https://api.dicebear.com/9.x/avataaars/svg?seed='+(id||'default');}
 function _tagColor(tag){
   // Hash tag name to hue for consistent color per tag
   var h=0;for(var i=0;i<tag.length;i++){h=((h<<5)-h)+tag.charCodeAt(i);h|=0;}
