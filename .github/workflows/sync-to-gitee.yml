@@ -1,0 +1,15 @@
+name: Sync to Gitee
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mirror to Gitee
+        run: |
+          git clone --bare https://github.com/${{ github.repository }}.git /tmp/repo.git
+          cd /tmp/repo.git
+          git push --mirror https://ivan-an-git:${{ secrets.GITEE_TOKEN }}@gitee.com/ivan-an-git/talent-discovery-widget.git
