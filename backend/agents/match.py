@@ -34,29 +34,16 @@ class MatchAgent(Agent):
 
         query_text = f"岗位需求:{position_name}"
 
-        # Layer 2: Keyword match (primary — always works, even with mock)
+        # Layer 2: Keyword match (primary — fast, no API calls)
         ranked_ids = keyword_search(df, query_text, top_n=50)
-
-        # Layer 2b: Vector semantic (blend-in when real embeddings available)
-        from utils.config import LLM_BACKEND
-        if LLM_BACKEND != "mock" and self.store.has_vector_index:
-            try:
-                query_emb = self.llm.embed([query_text])[0]
-                vec_ids = self.store.search_similar(query_emb, top_k=30)
-                # Blend into ranked_ids
-                for vid in vec_ids[:15]:
-                    if vid not in set(ranked_ids[:30]):
-                        ranked_ids.insert(min(10, len(ranked_ids)), vid)
-            except Exception:
-                pass
 
         # Build candidate profiles with keyword scores
         filtered_ids = set(_safe_df_ids(df))
         ranked_ids = [eid for eid in ranked_ids if eid in filtered_ids]
-        keyword_scores = keyword_score_for_candidates(df, query_text, ranked_ids[:top_n * 2])
+        keyword_scores = keyword_score_for_candidates(df, query_text, ranked_ids[:top_n])
 
         candidates = []
-        for eid in ranked_ids[:top_n * 2]:
+        for eid in ranked_ids[:top_n]:
             profile = self.store.get_by_id(eid)
             if profile:
                 raw = keyword_scores.get(eid, 0)

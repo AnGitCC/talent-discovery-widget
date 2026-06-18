@@ -89,8 +89,7 @@ def resolve_employee(text: str) -> dict | None:
     from data.talent_store import get_store
     store = get_store()
     if store.df is None or len(store.records) == 0:
-        from backend.llm.backend import get_llm
-        store.load(embedding_fn=get_llm().embed)
+        store.load(embedding_fn=None)
 
     # Try ID match
     id_match = re.search(r'G\d{6}', text)

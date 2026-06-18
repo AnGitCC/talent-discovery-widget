@@ -241,7 +241,7 @@ class BailianBackend:
                 "temperature": kwargs.get("temperature", 0.1),
                 "max_tokens": kwargs.get("max_tokens", 2048),
             },
-            timeout=120,
+            timeout=45,
         )
         resp.raise_for_status()
         data = resp.json()

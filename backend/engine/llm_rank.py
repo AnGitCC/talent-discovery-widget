@@ -32,22 +32,16 @@ def llm_rank(
     candidates: list[dict],
     top_n: int = 10,
 ) -> tuple[list[dict], str]:
-    """Use LLM to rank and score the top candidates.
-
-    Args:
-        llm: LLM backend instance
-        query_context: Description of what we're looking for
-        candidates: List of candidate dicts with id, profile, vector_score
-        top_n: How many to return
-
-    Returns:
-        (ranked candidates list, summary string)
-    """
+    """Use LLM to rank and score the top candidates (with timeout fallback)."""
     if not candidates:
         return [], ""
 
+    # Limit candidates sent to LLM — more = slower, and the top few are what matters
+    max_for_llm = min(len(candidates), max(top_n, 10))
+    llm_candidates = candidates[:max_for_llm]
+
     candidate_text = ""
-    for i, c in enumerate(candidates[:top_n]):
+    for i, c in enumerate(llm_candidates):
         profile = c.get("profile", {})
         candidate_text += f"""
 候选人 {i+1} (ID: {c['id']}):
@@ -59,9 +53,6 @@ def llm_rank(
   绩效: {profile.get('绩效等级', '')} ({profile.get('绩效分数', '')}分)
   技能: {profile.get('技能标签', '')}
   标签: {profile.get('所有标签', '')}
-  工作领域: {profile.get('工作领域', '')}
-  证书: {profile.get('证书', '')}
-  意愿调岗: {profile.get('是否愿意调岗', '')}
 """
 
     messages = [
@@ -72,15 +63,24 @@ def llm_rank(
 {candidate_text}
 
 请对以上候选人综合评分排序，考虑技能匹配度、岗位经验、绩效趋势、发展潜力等因素。
-按匹配度从高到低排列，给出评分(0-100)和匹配等级(S/A/B/C)。"""}
+按匹配度从高到低排列，给出评分(0-100)和匹配等级(S/A/B/C)。只返回JSON。"""}
     ]
 
-    response = llm.chat(messages, max_tokens=2048)
-    result = extract_json(response)
+    # Try LLM with a shorter timeout; fallback to keyword scoring if it fails
+    try:
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(llm.chat, messages, max_tokens=1024)
+            response = future.result(timeout=25)  # 25s max for LLM rerank
+            result = extract_json(response)
+    except Exception as e:
+        print(f"LLM rank timeout or error, falling back to keyword: {e}")
+        result = {}
 
     rankings = result.get("rankings", [])
     summary = result.get("summary", "")
 
+    # Apply LLM ranking to candidates
     rank_map = {}
     for r in rankings:
         eid = r.get("employee_id", "")
@@ -92,8 +92,8 @@ def llm_rank(
 
     for c in candidates:
         c.update(rank_map.get(c["id"], {
-            "llm_score": 50,
-            "grade": "B",
+            "llm_score": c.get("vector_score", 50),
+            "grade": compute_match_grade(c.get("vector_score", 50)),
             "reason": "",
         }))
 

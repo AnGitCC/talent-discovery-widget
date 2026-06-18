@@ -25,12 +25,11 @@ def _fmt_score(score):
 
 
 def _ensure_store():
-    """Get a loaded TalentStore singleton."""
+    """Get a loaded TalentStore singleton — fast path, no embedding."""
     from data.talent_store import get_store
     store = get_store()
     if store.df is None or len(store.records) == 0:
-        from llm.backend import get_llm
-        store.load(embedding_fn=get_llm().embed)
+        store.load(embedding_fn=None)  # Skip vector building — keyword search is sufficient
     return store
 
 
