@@ -246,7 +246,7 @@ class TalentWidget {
     '.action-btn{display:inline-block;padding:6px 14px;border-radius:8px;font-size:11px;color:#fff;background:#22c55e;border:none;margin:4px}'+
     '.detail-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}.detail-grid h4{font-weight:500;font-size:0.75rem;color:#86868B;text-transform:uppercase;margin-bottom:8px}.detail-col{background:#fafafa;border-radius:8px;padding:14px}.info-row{font-size:0.8125rem;color:#1D1D1F;margin:2px 0;display:flex;justify-content:space-between;padding:3px 0;border-bottom:0.5px solid #f2f2f7}.info-label{color:#86868B;flex-shrink:0}.info-val{color:#1D1D1F;font-weight:500;text-align:right}'+
     '@media print{body{margin:0;padding:0;max-width:none}.action-btn{display:none!important}}';
-  var origin=window.location.origin;var inner=fp.innerHTML.replace(/src="\/widget\/avatars\//g,'src="'+origin+'/widget/avatars/');var html='<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>'"+fname+"'</title><style>'"+css+'</style></head><body><div style="background:#fff;padding:24px">'+inner+'</div></body></html>';
+  var origin=window.location.origin;var inner=fp.innerHTML.replace(/src="\/widget\/avatars\//g,'src="'+origin+'/widget/avatars/');var html='<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>'+fname+'</title><style>'+css+'</style></head><body><div style="background:#fff;padding:24px">'+inner+'</div></body></html>';
   var w=window.open('','_blank','width=900,height=700');w.document.write(html);w.document.close();
 var self=this;setTimeout(function(){w.print();w.close();self._addBotMsg('报告已发送到打印机');},800); }
 }
