@@ -167,6 +167,7 @@ async def _handle_report(ctx, params, user_text, ids):
     result = {
         "type": "report",
         "data": {
+            "id": eid,
             "name": profile.get("姓名", ""),
             "grade": grade,
             "score": _fmt_score(score),
@@ -249,6 +250,7 @@ async def _handle_compare(ctx, params, user_text, ids):
             "发展潜力": min(100, max(20, base - ((h>>6) % 9) + 4)),
         }
         profiles.append({
+            "id": p.get("工号", ""),
             "name": p.get("姓名", ""),
             "department": p.get("部门", ""),
             "position": p.get("岗位", ""),

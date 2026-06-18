@@ -74,7 +74,7 @@ class TalentWidget {
 
   _addCard(data) {
     var g = data.grade || 'B'; this.messages.push({ role: 'bot', cardData: data });
-    this._app('<div class="message"><div class="msg-avatar bot"><img class="btn-icon-img" src="/widget/avatar.png" alt="AI"></div><div class="result-card" data-id="'+(data.id||'')+'"><div class="card-top"><input type="checkbox" class="card-checkbox" data-id="'+(data.id||'')+'"><div class="card-left"><div class="badge-row"><span class="grade-badge grade-'+g+'">'+g+'</span><span class="card-name">'+_esc(data.name||'')+'</span><span class="card-score">'+(data.score||'')+'</span></div><div class="card-meta">'+_esc(data.department||'')+' · '+_esc(data.position||'')+' · '+_esc(data.level||'')+' · '+_esc(data.education||'')+' · '+_esc(data.performance||'')+'</div><div class="card-chips">'+_chips(data.skills)+_chips(data.tags)+'</div></div><div class="card-actions"><button class="card-btn detail-btn" data-id="'+(data.id||'')+'">详情 →</button></div></div>'+(data.reason?'<div style="font-size:11px;color:var(--text-secondary);margin-top:6px;">'+_esc(data.reason)+'</div>':'')+'</div></div>');
+    this._app('<div class="message"><div class="msg-avatar bot"><img class="btn-icon-img" src="/widget/avatar.png" alt="AI"></div><div class="result-card" data-id="'+(data.id||'')+'"><div class="card-top"><input type="checkbox" class="card-checkbox" data-id="'+(data.id||'')+'"><img class="card-avatar" src="'+_avatarUrl(data.id)+'" alt="" onerror="this.style.display=\'none\'"><div class="card-left"><div class="badge-row"><span class="grade-badge grade-'+g+'">'+g+'</span><span class="card-name">'+_esc(data.name||'')+'</span><span class="card-score">'+(data.score||'')+'</span></div><div class="card-meta">'+_esc(data.department||'')+' · '+_esc(data.position||'')+' · '+_esc(data.level||'')+' · '+_esc(data.education||'')+' · '+_esc(data.performance||'')+'</div><div class="card-chips">'+_chips(data.skills)+_chips(data.tags)+'</div></div><div class="card-actions"><button class="card-btn detail-btn" data-id="'+(data.id||'')+'">详情 →</button></div></div>'+(data.reason?'<div style="font-size:11px;color:var(--text-secondary);margin-top:6px;">'+_esc(data.reason)+'</div>':'')+'</div></div>');
   }
 
   _addActions(actions) {
@@ -121,7 +121,7 @@ class TalentWidget {
   _renderReport(data) {
     var g=data.grade||'B', hasDims=data.dimensions&&Object.keys(data.dimensions).length>0;
     this.shadow.getElementById('fullscreen-panel').innerHTML =
-      '<div class="report-header"><div class="report-grade"><span class="grade-badge grade-'+g+'" style="font-size:1rem;padding:6px 14px;">'+g+'</span><div class="report-score">'+(data.score||'')+'</div><div style="font-size:0.75rem;color:var(--text-secondary)">综合评分</div></div>'+
+      '<div class="report-header"><img class="report-avatar" src="'+_avatarUrl(data.id)+'" alt="" onerror="this.style.display=\'none\'"><div class="report-grade"><span class="grade-badge grade-'+g+'" style="font-size:1rem;padding:6px 14px;">'+g+'</span><div class="report-score">'+(data.score||'')+'</div><div style="font-size:0.75rem;color:var(--text-secondary)">综合评分</div></div>'+
       '<div class="report-info"><div class="report-name">'+_esc(data.name||'')+'</div><div class="report-meta">'+_esc(data.department||'')+' · '+_esc(data.position||'')+' · '+_esc(data.level||'')+'</div>'+
       '<div class="report-meta">'+_esc(data.education||'')+' / '+_esc(data.major||'')+' · 司龄'+(data.tenure||'')+'年 · 绩效'+_esc(data.performance||'')+'</div></div></div>'+
       '<div class="report-section"><h4>技能标签</h4><div class="card-chips">'+_chips(data.skills)+'</div></div>'+
@@ -139,7 +139,7 @@ class TalentWidget {
     profiles.forEach(function(p){var d=p.dimensions||{};Object.keys(d).forEach(function(k){if(allDimKeys.indexOf(k)<0)allDimKeys.push(k);});});
     var hasDims=allDimKeys.length>0;
 
-    var hdr='<th class="cmp-label-th">属性</th>'+profiles.map(function(p){return'<th>'+_esc(p.name||'')+'</th>';}).join('');
+    var hdr='<th class="cmp-label-th">属性</th>'+profiles.map(function(p){return'<th><img class="cmp-avatar" src="'+_avatarUrl(p.id)+'" alt="" onerror="this.style.display=\'none\'"><div>'+_esc(p.name||'')+'</div></th>';}).join('');
     var gradeRow='<tr><td class="cmp-label">评级</td>'+profiles.map(function(p){return'<td><span class="grade-badge grade-'+(p.grade||'B')+'">'+(p.grade||'B')+'</span></td>';}).join('')+'</tr>';
     var scoreRow='<tr class="cmp-row-odd"><td class="cmp-label">综合评分</td>'+profiles.map(function(p){return'<td><span class="cmp-score-cell">'+_esc(p.score||'—')+'</span></td>';}).join('')+'</tr>';
     var radarRow='';
@@ -197,6 +197,7 @@ class TalentWidget {
 
 /* ── Helpers ── */
 function _esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function _avatarUrl(id){return 'https://api.dicebear.com/9.x/personas/svg?seed='+(id||'default')+'&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf';}
 function _chips(a){return(a||[]).map(function(x){return'<span class="chip">'+_esc(x)+'</span>';}).join('');}
 function _li(a){return(a||[]).map(function(s){return'<li>'+_esc(s)+'</li>';}).join('')||'<li>暂无数据</li>';}
 function _dimFallback(d){if(!d||!Object.keys(d).length)return'';return'<div class="report-section"><h4>匹配度各维度</h4>'+Object.entries(d).map(function(e){return'<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:0.5px solid var(--border-light);"><span style="font-size:0.8125rem;color:var(--text);">'+_esc(e[0])+'</span><span style="font-size:0.8125rem;font-weight:600;color:var(--green);">'+e[1]+'</span></div>';}).join('')+'</div>';}
@@ -255,6 +256,7 @@ const _CSS = ':host{--green:#22c55e;--green-dark:#16a34a;--green-light:#86efac;-
 '.reconnect-banner{background:#FEF3C7;color:#92400E;font-size:11px;text-align:center;padding:6px 10px;border-bottom:0.5px solid #FDE68A;flex-shrink:0}'+
 '.messages-container::-webkit-scrollbar,.fullscreen-panel::-webkit-scrollbar{width:5px}.messages-container::-webkit-scrollbar-track,.fullscreen-panel::-webkit-scrollbar-track{background:transparent}.messages-container::-webkit-scrollbar-thumb,.fullscreen-panel::-webkit-scrollbar-thumb{background:#D1D1D6;border-radius:10px}.messages-container::-webkit-scrollbar-thumb:hover,.fullscreen-panel::-webkit-scrollbar-thumb:hover{background:var(--green)}'+
 '.card-checkbox{accent-color:var(--green);cursor:pointer;flex-shrink:0}.result-card:has(.card-checkbox:checked){border-color:var(--green)!important;background:var(--green-ghost)!important}'+
+'.card-avatar{width:40px;height:40px;border-radius:50%;flex-shrink:0;object-fit:cover;background:var(--border-light)}.report-avatar{width:72px;height:72px;border-radius:50%;flex-shrink:0;object-fit:cover;background:var(--border-light);margin-right:8px}.cmp-avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;background:var(--border-light);display:block;margin:0 auto 4px}'+
 '.resize-grip-top{display:none;height:6px;background:linear-gradient(135deg,var(--green),#4ade80);cursor:ns-resize;flex-shrink:0;transition:background 0.15s ease}.floating .resize-grip-top{display:block}.resize-grip-top:hover{background:var(--green-dark)}'+
 '.resize-grip-right{display:none;width:6px;background:transparent;cursor:ew-resize;flex-shrink:0;transition:background 0.15s ease}.fullscreen .resize-grip-right{display:block}.resize-grip-right:hover{background:rgba(34,197,94,0.15)}'+
 '@keyframes float-pulse{0%,100%{box-shadow:0 4px 16px rgba(34,197,94,0.4)}50%{box-shadow:0 4px 28px rgba(34,197,94,0.6)}}@keyframes ring-pulse{0%,100%{transform:scale(1);opacity:0.4}50%{transform:scale(1.12);opacity:0}}'+
