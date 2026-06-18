@@ -14,6 +14,7 @@ class SessionContext:
     cached_candidates: list[dict] = field(default_factory=list)
     selected_ids: list[str] = field(default_factory=list)
     fullscreen: bool = False
+    last_query: str = ""
     # Per-session result cache — avoid redundant AI calls
     cached_reports: dict[str, dict] = field(default_factory=dict)
     cached_compares: dict[str, dict] = field(default_factory=dict)

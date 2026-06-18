@@ -74,6 +74,7 @@ async def ws_endpoint(ws: WebSocket):
             if msg_type == "message":
                 user_text = msg.get("text", "")
                 ctx.add_message("user", user_text)
+                ctx.last_query = user_text
                 async for ws_msg in stream_response(ctx, user_text):
                     await ws.send_json(ws_msg)
 
@@ -81,7 +82,8 @@ async def ws_endpoint(ws: WebSocket):
                 action = msg.get("action", "")
                 msg_ids = msg.get("ids", [])
                 if action in ("compare", "report"):
-                    async for ws_msg in stream_response(ctx, "", action=action, ids=msg_ids):
+                    user_text = ctx.last_query if action == "compare" else ""
+                    async for ws_msg in stream_response(ctx, user_text, action=action, ids=msg_ids):
                         await ws.send_json(ws_msg)
                 elif action == "export":
                     await ws.send_json({"type": "text", "content": f"Download: /api/export/{ctx.session_id}"})

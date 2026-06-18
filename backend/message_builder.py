@@ -310,7 +310,11 @@ async def _handle_compare(ctx, params, user_text, ids):
   证书: {p.get('证书','')}
 """
 
-    prompt = f"比较上下文: {user_text}\n{profiles_text}\n请生成对比JSON（strengths每人3-4条，weaknesses每人1-2条，positioning一句定位，recommendation任用建议，comprehensive_score 0-100整数，overall_comparison综合结论2-4句）。只返回JSON，不要其他。"
+    query_line = ""
+    if user_text and user_text.strip():
+        query_line = f"\n用户搜索需求: 「{user_text}」\n请围绕用户需求进行针对性分析：strengths要说明该候选人为什么符合这个需求，weaknesses要指出与需求之间的差距，positioning和recommendation要结合需求给出判断。"
+
+    prompt = f"{profiles_text}{query_line}\n请生成对比JSON（strengths每人3-4条，weaknesses每人1-2条，positioning一句定位，recommendation任用建议，comprehensive_score 0-100整数，overall_comparison综合结论2-4句）。只返回JSON，不要其他。"
     messages = [{"role": "system", "content": COMPARE_SYSTEM}, {"role": "user", "content": prompt}]
 
     raw_text = ""
