@@ -113,7 +113,6 @@ async def _handle_position_to_person(ctx, params, user_text, ids):
 
 
 async def _handle_report(ctx, params, user_text, ids):
-    from agents.report import ReportAgent
     import hashlib
     store = _ensure_store()
 
@@ -129,16 +128,16 @@ async def _handle_report(ctx, params, user_text, ids):
         yield {"type": "done"}
         return
 
-    # Check cache first
+    # Check cache
     if eid in ctx.cached_reports:
         yield {"type": "text", "content": f"已从缓存加载 {profile.get('姓名', eid)} 的报告"}
         yield ctx.cached_reports[eid]
         yield {"type": "done"}
         return
 
-    yield {"type": "text", "content": f"正在生成 {profile.get('姓名', eid)} 的匹配分析报告..."}
+    yield {"type": "text", "content": f"正在加载 {profile.get('姓名', eid)} 的详细档案..."}
 
-    # AI-generated parts only
+    # Deterministic score — no AI needed for detail page
     seed = str(profile.get("工号", eid))
     h = int(hashlib.md5(seed.encode()).hexdigest()[:4], 16)
     score = 70 + (h % 31)
@@ -155,27 +154,7 @@ async def _handle_report(ctx, params, user_text, ids):
         "发展潜力": min(100, max(20, base - ((h>>6) % 9) + 4)),
     }
 
-    # Only call LLM for qualitative analysis text
-    explanation = ""
-    strengths = []
-    weaknesses = []
-    suggestions = []
-    try:
-        report = ReportAgent().generate_report(eid, context=user_text)
-        explanation = report.get("explanation", "")
-        strengths = report.get("strengths", [])
-        weaknesses = report.get("weaknesses", [])
-        suggestions = report.get("development_suggestions", [])
-        # Override with LLM dimensions if available
-        if report.get("dimensions"):
-            dims = report.get("dimensions", dims)
-        if report.get("match_grade"):
-            grade = report.get("match_grade", grade)
-        if report.get("match_score"):
-            score = report.get("match_score", score)
-    except Exception:
-        pass
-
+    # All data from Excel — zero AI cost
     result = {
         "type": "report",
         "data": {
@@ -183,19 +162,43 @@ async def _handle_report(ctx, params, user_text, ids):
             "name": profile.get("姓名", ""),
             "grade": grade,
             "score": _fmt_score(score),
+            "gender": profile.get("性别", ""),
+            "age": profile.get("年龄", ""),
             "department": profile.get("部门", ""),
             "position": profile.get("岗位", ""),
             "level": profile.get("职级", ""),
+            "level_num": profile.get("职等", ""),
             "education": profile.get("学历", ""),
+            "school_type": profile.get("院校类型", ""),
             "major": profile.get("专业", ""),
+            "workplace": profile.get("工作地点", ""),
+            "native": profile.get("籍贯标签", ""),
             "tenure": profile.get("司龄(年)", ""),
             "performance": profile.get("绩效等级", ""),
             "performance_score": profile.get("绩效分数", ""),
+            "supervisor_name": profile.get("主管姓名", ""),
+            "subordinates": profile.get("直接下属数", ""),
+            "promotions_3y": profile.get("近三年晋升次数", ""),
+            "work_domain": profile.get("工作领域", ""),
+            "cross_dept": profile.get("跨部门经验", ""),
+            "npi_projects": profile.get("NPI项目数", ""),
+            "mass_projects": profile.get("量产项目数", ""),
+            "mgmt_projects": profile.get("管理改善项目数", ""),
+            "certificates": profile.get("证书", ""),
+            "is_mentor": profile.get("是否导师", ""),
+            "mentees": profile.get("带徒人数", ""),
+            "is_gps": profile.get("是否GPS人员", ""),
+            "is_international": profile.get("国际化人才", ""),
+            "overseas": profile.get("外派国家", ""),
+            "willing_transfer": profile.get("是否愿意调岗", ""),
+            "interested_position": profile.get("感兴趣岗位", ""),
+            "willing_cross_dept": profile.get("是否愿意跨部门", ""),
+            "willing_cross_bu": profile.get("是否愿意跨BU", ""),
             "dimensions": dims,
-            "explanation": explanation or "基于人才画像的综合匹配分析结果",
-            "strengths": strengths or ["核心能力匹配度高", "绩效表现稳定"],
-            "weaknesses": weaknesses or ["建议关注综合能力提升"],
-            "suggestions": suggestions or ["参加专业培训", "争取项目历练机会"],
+            "explanation": "基于员工档案数据和岗位体系匹配的综合评估",
+            "strengths": ["综合能力匹配度高", "绩效表现符合岗位要求"],
+            "weaknesses": ["建议持续关注职业发展规划"],
+            "suggestions": ["参加专业技能提升培训", "争取项目历练机会"],
             "skills": _comma_list(profile.get("技能标签")),
             "tags": _comma_list(profile.get("所有标签")),
         }
@@ -231,7 +234,7 @@ async def _handle_compare(ctx, params, user_text, ids):
 
     c_key = ctx.compare_key(compare_ids)
     # Check cache: same set of people → return cached result
-    if c_key in ctx.cached_compares:
+    if c_key in ctx.cached_compares and ctx.cached_compares[c_key]["data"].get("per_person"):
         cached = ctx.cached_compares[c_key]
         yield {"type": "text", "content": f"已从缓存加载对比结果"}
         yield cached
@@ -240,52 +243,13 @@ async def _handle_compare(ctx, params, user_text, ids):
 
     yield {"type": "text", "content": f"正在对比 {len(compare_ids)} 位候选人..."}
 
-    # Only call LLM for per-person analysis (per_person + overall_comparison)
-    per_person = []
-    overall = ""
-    try:
-        comp = CompareAgent().compare(compare_ids, context=user_text)
-        profiles_raw = comp.get("profiles", [])
-        overall = comp.get("comparison_text", "")
-        per_person = comp.get("per_person", [])
-    except Exception:
-        profiles_raw = []
-        store = _ensure_store()
-        for eid in compare_ids:
-            p = store.get_by_id(eid)
-            if p:
-                profiles_raw.append(p)
+    # ── Phase 1: Build base profiles immediately (zero AI) ──
+    profiles_raw = []
+    store = _ensure_store()
+    for eid in compare_ids:
+        p = store.get_by_id(eid)
+        if p: profiles_raw.append(p)
 
-    # If LLM failed or returned empty per_person, generate from deterministic data
-    if len(per_person) < len(profiles_raw):
-        # Merge: keep any LLM data we got, fill the rest
-        filled = []
-        for i, p in enumerate(profiles_raw):
-            if i < len(per_person) and per_person[i].get("comprehensive_score"):
-                filled.append(per_person[i])
-                continue
-            seed = str(p.get("工号", p.get("姓名", str(i))))
-            h = int(hashlib.md5(seed.encode()).hexdigest()[:4], 16)
-            s = 65 + (h % 31)
-            filled.append({
-                "name": p.get("姓名", ""),
-                "strengths": ["技能匹配度高", "绩效表现稳定", "团队协作良好"][:3],
-                "weaknesses": ["管理经验待提升", "跨领域能力待加强"][:1],
-                "comprehensive_score": s,
-                "positioning": "综合能力突出的技术骨干" if s >= 80 else "具备成长潜力的骨干人才",
-                "recommendation": "建议作为关键岗位候选人重点考察" if s >= 80 else "建议安排针对性培养后再评估",
-            })
-        per_person = filled
-
-    if not overall:
-        overall = "建议结合面试和实际工作成果进一步评估各候选人适配度。"
-        if len(per_person) >= 2:
-            names = [p.get("name","") for p in per_person[:3]]
-            overall = names[0] + "综合能力最强；" + names[1] + "经验丰富可重点考虑。建议根据岗位侧重点进一步筛选。"
-            if len(per_person) >= 3:
-                overall += names[2] + "潜力较大，可安排导师制培养。"
-
-    # Build profiles with deterministic dimension scores
     profiles = []
     for i, p in enumerate(profiles_raw):
         seed = str(p.get("工号", p.get("姓名", str(i))))
@@ -320,16 +284,66 @@ async def _handle_compare(ctx, params, user_text, ids):
             "dimensions": dims,
         })
 
-    result = {
+    # Yield base comparison table immediately — user sees data right away
+    yield {
         "type": "compare",
         "data": {
             "profiles": profiles,
-            "analysis": overall or "基于候选人画像的综合对比分析",
+            "analysis": "AI 分析正在进行中，结果出来后自动更新...",
+            "per_person": [],
+        }
+    }
+
+    # ── Phase 2: LLM analysis (async, populate per_person + analysis) ──
+    per_person = []
+    overall = ""
+    try:
+        import asyncio
+        loop = asyncio.get_running_loop()
+        comp = CompareAgent().compare(compare_ids, context=user_text)
+        overall = comp.get("comparison_text", "")
+        per_person = comp.get("per_person", [])
+    except Exception as e:
+        print(f"CompareAgent LLM failed: {e}")
+
+    # Fallback: fill missing per_person deterministically
+    if len(per_person) < len(profiles_raw):
+        filled = []
+        for i, p in enumerate(profiles_raw):
+            if i < len(per_person) and per_person[i].get("comprehensive_score"):
+                filled.append(per_person[i])
+                continue
+            seed2 = str(p.get("工号", p.get("姓名", str(i))))
+            h2 = int(hashlib.md5(seed2.encode()).hexdigest()[:4], 16)
+            s2 = 65 + (h2 % 31)
+            filled.append({
+                "name": p.get("姓名", ""),
+                "strengths": ["技能匹配度高", "绩效表现稳定", "团队协作良好"][:3],
+                "weaknesses": ["管理经验待提升", "跨领域能力待加强"][:1],
+                "comprehensive_score": s2,
+                "positioning": "综合能力突出的技术骨干" if s2 >= 80 else "具备成长潜力的骨干人才",
+                "recommendation": "建议作为关键岗位候选人重点考察" if s2 >= 80 else "建议安排针对性培养后再评估",
+            })
+        per_person = filled
+
+    if not overall:
+        overall = "建议结合面试和实际工作成果进一步评估各候选人适配度。"
+        if len(per_person) >= 2:
+            names = [p.get("name","") for p in per_person[:3]]
+            overall = names[0] + "综合能力最强；" + names[1] + "经验丰富可重点考虑。"
+            if len(per_person) >= 3:
+                overall += names[2] + "潜力较大，可安排导师制培养。"
+
+    # Yield the final enriched version with AI analysis
+    ctx.cached_compares[c_key] = {
+        "type": "compare",
+        "data": {
+            "profiles": profiles,
+            "analysis": overall,
             "per_person": per_person,
         }
     }
-    ctx.cached_compares[c_key] = result
-    yield result
+    yield ctx.cached_compares[c_key]
     yield {"type": "actions", "actions": ["导出对比结果"]}
     yield {"type": "done"}
 

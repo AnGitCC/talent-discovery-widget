@@ -106,7 +106,7 @@ class TalentWidget {
       text: function(){self._addBotMsg(msg.content);},
       card: function(){self._addCard(msg.data);},
       report: function(){self._removeTyping();if(!self._isFullscreen())self.toggleFullscreen();self._renderReport(msg.data);},
-      compare: function(){self._removeTyping();if(!self._isFullscreen())self.toggleFullscreen();self._renderCompare(msg.data);},
+      compare: function(){self._removeTyping();if(!self._isFullscreen())self.toggleFullscreen();self._renderCompare(msg.data);if(!(msg.data.per_person&&msg.data.per_person.length>0))self._showAiPending();},
       profile: function(){self._removeTyping();if(!self._isFullscreen())self.toggleFullscreen();self._renderProfile(msg.data);},
       actions: function(){self._addActions(msg.actions);},
       done: function(){self._removeTyping();self.shadow.getElementById('send-btn').disabled=false;self.shadow.getElementById('msg-input').focus();},
@@ -117,17 +117,52 @@ class TalentWidget {
 
   _showReconnecting() { var b=this.shadow.getElementById('reconnect-banner'); if(b)b.style.display='block'; }
   _hideReconnecting() { var b=this.shadow.getElementById('reconnect-banner'); if(b)b.style.display='none'; }
+  _showAiPending() { var fp=this.shadow.getElementById('fullscreen-panel'); var d=document.createElement('div'); d.className='ai-pending'; d.innerHTML='<div class="report-section" style="margin-top:20px"><p style="font-size:0.8125rem;color:var(--text-secondary);display:flex;align-items:center;gap:8px"><span class="spinner-ring" style="width:14px;height:14px;border-width:2px;display:inline-block"></span>AI 深度分析生成中，完成后自动刷新...</p></div>'; fp.appendChild(d); }
 
   _renderReport(data) {
     var g=data.grade||'B', hasDims=data.dimensions&&Object.keys(data.dimensions).length>0;
+    // Info row helper
+    function _info(label, val) { return val ? '<div class="info-row"><span class="info-label">'+_esc(label)+'</span><span class="info-val">'+_esc(String(val))+'</span></div>' : ''; }
     this.shadow.getElementById('fullscreen-panel').innerHTML =
       '<div class="report-header"><img class="report-avatar" src="'+_avatarUrl(data.id)+'" alt="" onerror="this.style.display=\'none\'"><div class="report-grade"><span class="grade-badge grade-'+g+'" style="font-size:1rem;padding:6px 14px;">'+g+'</span><div class="report-score">'+(data.score||'')+'</div><div style="font-size:0.75rem;color:var(--text-secondary)">综合评分</div></div>'+
       '<div class="report-info"><div class="report-name">'+_esc(data.name||'')+'</div><div class="report-meta">'+_esc(data.department||'')+' · '+_esc(data.position||'')+' · '+_esc(data.level||'')+'</div>'+
       '<div class="report-meta">'+_esc(data.education||'')+' / '+_esc(data.major||'')+' · 司龄'+(data.tenure||'')+'年 · 绩效'+_esc(data.performance||'')+'</div></div></div>'+
+
+      '<div class="detail-grid">'+
+        '<div class="detail-col"><h4>基本信息</h4>'+
+          _info('姓名',data.name)+_info('性别',data.gender)+_info('年龄',data.age)+_info('籍贯',data.native)+
+          _info('工龄(年)',data.tenure)+_info('工作地点',data.workplace)+
+        '</div>'+
+        '<div class="detail-col"><h4>组织信息</h4>'+
+          _info('部门',data.department)+_info('岗位',data.position)+_info('职级',data.level)+
+          _info('职等',data.level_num)+_info('主管',data.supervisor_name)+_info('下属数',data.subordinates)+
+        '</div>'+
+        '<div class="detail-col"><h4>学历背景</h4>'+
+          _info('学历',data.education)+_info('院校类型',data.school_type)+_info('专业',data.major)+
+        '</div>'+
+      '</div>'+
+
       '<div class="report-section"><h4>技能标签</h4><div class="card-chips">'+_chips(data.skills)+'</div></div>'+
       '<div class="report-section"><h4>人才标签</h4><div class="card-chips">'+_chips(data.tags)+'</div></div>'+
+
+      '<div class="detail-grid" style="margin-top:16px">'+
+        '<div class="detail-col"><h4>项目经验</h4>'+
+          _info('NPI项目数',data.npi_projects)+_info('量产项目数',data.mass_projects)+_info('管理改善项目',data.mgmt_projects)+
+          _info('工作领域',data.work_domain)+_info('跨部门经验',data.cross_dept)+
+        '</div>'+
+        '<div class="detail-col"><h4>证书与资质</h4>'+
+          _info('证书',data.certificates)+_info('导师',data.is_mentor)+_info('带徒人数',data.mentees)+
+          _info('GPS人员',data.is_gps)+_info('国际化人才',data.is_international)+_info('外派国家',data.overseas)+
+        '</div>'+
+        '<div class="detail-col"><h4>发展意愿</h4>'+
+          _info('是否愿意调岗',data.willing_transfer)+_info('感兴趣岗位',data.interested_position)+
+          _info('愿意跨部门',data.willing_cross_dept)+_info('愿意跨BU',data.willing_cross_bu)+
+          _info('近三年晋升',data.promotions_3y)+_info('绩效分数',data.performance_score)+
+        '</div>'+
+      '</div>'+
+
       (hasDims?'<div class="report-section"><h4>匹配度各维度</h4><div id="report-chart" style="width:100%;max-width:500px;margin:0 auto;">'+_radarSVG(data.dimensions)+'</div></div>':_dimFallback(data.dimensions))+
-      '<div class="report-section"><h4>分析说明</h4><p>'+_esc(data.explanation||'暂无')+'</p></div>'+
+      '<div class="report-section"><h4>综合评估</h4><p>'+_esc(data.explanation||'暂无')+'</p></div>'+
       '<div class="report-section" style="display:flex;gap:24px;"><div style="flex:1;"><h4>优势</h4><ul>'+_li(data.strengths)+'</ul></div><div style="flex:1;"><h4>待发展项</h4><ul>'+_li(data.weaknesses)+'</ul></div></div>'+
       '<div class="report-section"><h4>发展建议</h4><ul>'+_li(data.suggestions)+'</ul></div>';
   }
@@ -267,7 +302,7 @@ const _CSS = ':host{--green:#22c55e;--green-dark:#16a34a;--green-light:#86efac;-
 '.cmp-table tbody td{padding:10px 14px;text-align:center;color:var(--text);vertical-align:middle}.cmp-table tbody td:first-child{text-align:left}'+
 '.cmp-row-even td{background:var(--bg)}.cmp-row-odd td{background:var(--white)}.cmp-table tbody tr:hover td{background:var(--green-ghost)}'+
 '.cmp-section-header td{background:var(--border-light)!important;font-weight:600;font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.05em;padding:8px 14px!important}'+
-'.profile-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}.profile-grid h4{font-weight:500;font-size:0.75rem;color:var(--text-secondary);text-transform:uppercase;margin-bottom:8px}.info-row{font-size:0.8125rem;color:var(--text);margin:2px 0}'+
+'.profile-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}.detail-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}.detail-grid h4{font-weight:500;font-size:0.75rem;color:var(--text-secondary);text-transform:uppercase;margin-bottom:8px}.detail-col{background:var(--bg);border-radius:var(--radius-sm);padding:14px}.profile-grid h4{font-weight:500;font-size:0.75rem;color:var(--text-secondary);text-transform:uppercase;margin-bottom:8px}.info-row{font-size:0.8125rem;color:var(--text);margin:2px 0;display:flex;justify-content:space-between;padding:3px 0;border-bottom:0.5px solid var(--border-light)}.info-label{color:var(--text-secondary);flex-shrink:0}.info-val{color:var(--text);font-weight:500;text-align:right}'+
 '.typing-indicator{display:flex;gap:4px;padding:8px 12px}.typing-indicator span{width:6px;height:6px;background:var(--border);border-radius:50%;animation:bounce 1.4s infinite ease-in-out both}.typing-indicator span:nth-child(1){animation-delay:-0.32s}.typing-indicator span:nth-child(2){animation-delay:-0.16s}@keyframes bounce{0%,80%,100%{transform:scale(0)}40%{transform:scale(1)}}'+
 '.suggestion-chip{font-size:11px;color:var(--green);background:var(--green-ghost);border:0.5px solid rgba(34,197,94,0.2);border-radius:var(--radius-full);padding:4px 12px;cursor:pointer;transition:all 0.15s ease}.suggestion-chip:hover{background:rgba(34,197,94,0.15)}'+
 '.reconnect-banner{background:#FEF3C7;color:#92400E;font-size:11px;text-align:center;padding:6px 10px;border-bottom:0.5px solid #FDE68A;flex-shrink:0}'+
