@@ -196,6 +196,7 @@ async def _handle_compare(ctx, params, user_text, ids):
         "data": {
             "profiles": profiles,
             "analysis": comp.get("comparison_text", ""),
+            "per_person": comp.get("per_person", []),
         }
     }
     yield {"type": "actions", "actions": ["导出对比结果"]}

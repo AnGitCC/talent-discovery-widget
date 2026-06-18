@@ -93,14 +93,30 @@ class MockBackend:
         return """{"match_grade":"A","match_score":82,"dimensions":{"技能匹配":85,"经验匹配":80,"绩效趋势":78,"软性素质":82,"发展潜力":85},"explanation":"候选人在技能维度表现突出，核心技术栈与岗位要求高度吻合。近三年绩效呈上升趋势，具备良好的发展潜力。","strengths":["核心技术栈高度匹配","绩效持续优秀","有跨部门协作经验"],"weaknesses":["管理经验偏少","海外项目经验不足"],"development_suggestions":["参加PMP认证培训","可安排海外项目轮岗"]}"""
 
     def _mock_compare_response(self, user: str) -> str:
-        import re as _re2
-        # Extract names from the compare agent's formatted user text
+        import re as _re2, json as _json
         names = _re2.findall(r'姓名:\s*(\S+)', user)
-        if len(names) >= 3:
-            return names[0] + "综合能力最强，" + names[1] + "在特定领域有突出优势，" + names[2] + "具备较好的发展潜力。建议根据岗位侧重点进一步筛选。"
-        if len(names) >= 2:
-            return names[0] + "在技能匹配上更优，" + names[1] + "在经验上更丰富。" + names[0] + "更适合该岗位的即时上手需求。"
-        return "以上候选人均具备匹配该岗位的基本素质，建议结合面试进一步评估。"
+        n = max(len(names), 2)
+        positions = ["技术深度突出", "经验丰富全面", "潜力型人才"]
+        recs = ["建议作为核心技术负责人重点培养", "适合担任项目统筹协调角色", "建议安排轮岗锻炼后再评估"]
+        profiles = []
+        for i in range(n):
+            name = names[i] if i < len(names) else '候选人' + str(i+1)
+            profiles.append({
+                "name": name,
+                "strengths": ["核心技术栈高度匹配", "绩效表现持续优秀", "团队协作能力强"],
+                "weaknesses": (["管理经验有待积累", "跨领域经验不足"])[:1 + (i % 2)],
+                "comprehensive_score": 88 - i * 5,
+                "positioning": positions[i] if i < 3 else positions[2],
+                "recommendation": recs[i] if i < 3 else recs[2],
+            })
+        overall = profiles[0]["name"] + "综合能力最强，适合承担核心技术角色；"
+        if n >= 2:
+            overall += profiles[1]["name"] + "经验丰富，在项目管理方面有优势。"
+        if n <= 2:
+            overall += "建议根据岗位侧重点进一步筛选面试。"
+        else:
+            overall += profiles[2]["name"] + "潜力较大，可安排导师制培养。"
+        return _json.dumps({"profiles": profiles, "overall_comparison": overall}, ensure_ascii=False)
 
     def _mock_tag_response(self, user: str) -> str:
         return """```json

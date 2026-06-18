@@ -129,47 +129,40 @@ class TalentWidget {
   _renderCompare(data) {
     var profiles=data.profiles||[], n=profiles.length;
     if (n < 2) return;
-    // Collect all dimension keys across all profiles
     var allDimKeys=[];
     profiles.forEach(function(p){var d=p.dimensions||{};Object.keys(d).forEach(function(k){if(allDimKeys.indexOf(k)<0)allDimKeys.push(k);});});
     var hasDims=allDimKeys.length>0;
 
-    // Build header: attribute label + each candidate name
     var hdr='<th class="cmp-label-th">属性</th>'+profiles.map(function(p){return'<th>'+_esc(p.name||'')+'</th>';}).join('');
-
-    // Row: 评级
     var gradeRow='<tr><td class="cmp-label">评级</td>'+profiles.map(function(p){return'<td><span class="grade-badge grade-'+(p.grade||'B')+'">'+(p.grade||'B')+'</span></td>';}).join('')+'</tr>';
-    // Row: 综合评分
     var scoreRow='<tr class="cmp-row-odd"><td class="cmp-label">综合评分</td>'+profiles.map(function(p){return'<td><span class="cmp-score-cell">'+_esc(p.score||'—')+'</span></td>';}).join('')+'</tr>';
-    // Row: 雷达图 (if has dimensions)
     var radarRow='';
-    if (hasDims) {
-      radarRow='<tr><td class="cmp-label">能力雷达</td>'+profiles.map(function(p){var dims=p.dimensions||{};return'<td><div style="width:100%;max-width:200px;margin:0 auto;">'+_radarSVG(dims,200)+'</div></td>';}).join('')+'</tr>';
-    }
-    // Section header
+    if (hasDims) { radarRow='<tr><td class="cmp-label">能力雷达</td>'+profiles.map(function(p){var dims=p.dimensions||{};return'<td><div style="width:100%;max-width:200px;margin:0 auto;">'+_radarSVG(dims,200)+'</div></td>';}).join('')+'</tr>'; }
     var secHdr='<tr class="cmp-section-header"><td class="cmp-label">基本信息</td>'+profiles.map(function(){return'<td></td>';}).join('')+'</tr>';
-    // Basic info rows
     var attrs=[{k:'department',l:'部门'},{k:'position',l:'岗位'},{k:'level',l:'职级'},{k:'education',l:'学历'},{k:'major',l:'专业'},{k:'performance',l:'绩效'},{k:'tenure',l:'司龄(年)'}];
-    var tRows=attrs.map(function(a,i){
-      var cls=i%2===0?'cmp-row-even':'cmp-row-odd';
-      return '<tr class="'+cls+'"><td class="cmp-label">'+a.l+'</td>'+profiles.map(function(p){return'<td>'+_esc(String(p[a.k]||'—'))+'</td>';}).join('')+'</tr>';
-    }).join('');
-    // Skills row
+    var tRows=attrs.map(function(a,i){var cls=i%2===0?'cmp-row-even':'cmp-row-odd';return'<tr class="'+cls+'"><td class="cmp-label">'+a.l+'</td>'+profiles.map(function(p){return'<td>'+_esc(String(p[a.k]||'—'))+'</td>';}).join('')+'</tr>';}).join('');
     var sRow='<tr class="cmp-row-odd"><td class="cmp-label">技能标签</td>'+profiles.map(function(p){return'<td class="cmp-chips-cell">'+(p.skills||[]).slice(0,8).map(function(s){return'<span class="chip">'+_esc(s)+'</span>';}).join('')+'</td>';}).join('')+'</tr>';
-    // Dimension score rows
     var dRows='';
-    if (hasDims) {
-      dRows='<tr class="cmp-section-header"><td class="cmp-label">维度评分</td>'+profiles.map(function(){return'<td></td>';}).join('')+'</tr>';
-      dRows+=allDimKeys.map(function(k,i){
-        var cls=i%2===0?'cmp-row-even':'cmp-row-odd';
-        return '<tr class="'+cls+'"><td class="cmp-label">'+_esc(k)+'</td>'+profiles.map(function(p){var v=(p.dimensions||{})[k];return'<td><span style="font-weight:600;color:'+(v>=80?'var(--green)':v>=60?'#F59E0B':'#EF4444')+'">'+(v!=null?v:'—')+'</span></td>';}).join('')+'</tr>';
-      }).join('');
+    if (hasDims) { dRows='<tr class="cmp-section-header"><td class="cmp-label">维度评分</td>'+profiles.map(function(){return'<td></td>';}).join('')+'</tr>'; dRows+=allDimKeys.map(function(k,i){var cls=i%2===0?'cmp-row-even':'cmp-row-odd';return'<tr class="'+cls+'"><td class="cmp-label">'+_esc(k)+'</td>'+profiles.map(function(p){var v=(p.dimensions||{})[k];return'<td><span style="font-weight:600;color:'+(v>=80?'var(--green)':v>=60?'#F59E0B':'#EF4444')+'">'+(v!=null?v:'—')+'</span></td>';}).join('')+'</tr>';}).join(''); }
+
+    // ── AI Analysis: per-candidate structured columns ──
+    var perPerson=data.per_person||[];
+    var aiSection='';
+    if (perPerson.length>0) {
+      var aiHdr='<th class="cmp-label-th">AI 深度分析</th>'+profiles.map(function(p){return'<th>'+_esc(p.name||'')+'</th>';}).join('');
+      var posRow='<tr class="cmp-row-odd"><td class="cmp-label">定位</td>'+perPerson.map(function(p){return'<td>'+_esc(p.positioning||'—')+'</td>';}).join('')+'</tr>';
+      var compScoreRow='<tr><td class="cmp-label">综合得分</td>'+perPerson.map(function(p){var s=parseInt(p.comprehensive_score)||0;return'<td><span style="font-size:1.3rem;font-weight:300;color:'+(s>=80?'var(--green)':s>=65?'#F59E0B':'#EF4444')+'">'+s+'</span></td>';}).join('')+'</tr>';
+      var strRow='<tr class="cmp-row-odd"><td class="cmp-label">优势</td>'+perPerson.map(function(p){return'<td><ul style="margin:0;padding:0 0 0 16px;font-size:0.75rem;color:var(--text);line-height:1.7">'+(p.strengths||[]).slice(0,4).map(function(s){return'<li>'+_esc(s)+'</li>';}).join('')+'</ul></td>';}).join('')+'</tr>';
+      var weakRow='<tr><td class="cmp-label">待发展</td>'+perPerson.map(function(p){return'<td><ul style="margin:0;padding:0 0 0 16px;font-size:0.75rem;color:var(--text-secondary);line-height:1.7">'+(p.weaknesses||[]).slice(0,3).map(function(s){return'<li>'+_esc(s)+'</li>';}).join('')+'</ul></td>';}).join('')+'</tr>';
+      var recRow='<tr class="cmp-row-odd"><td class="cmp-label">任用建议</td>'+perPerson.map(function(p){return'<td style="font-size:0.8125rem;color:var(--text);line-height:1.7">'+_esc(p.recommendation||'—')+'</td>';}).join('')+'</tr>';
+      aiSection='<table class="cmp-table" style="margin-top:24px;"><thead><tr>'+aiHdr+'</tr></thead><tbody>'+posRow+compScoreRow+strRow+weakRow+recRow+'</tbody></table>';
     }
 
     this.shadow.getElementById('fullscreen-panel').innerHTML =
       '<h3 style="font-weight:600;font-size:1.25rem;color:var(--text);margin-bottom:20px;">候选人对比分析</h3>'+
       '<table class="cmp-table"><thead><tr>'+hdr+'</tr></thead><tbody>'+gradeRow+scoreRow+radarRow+secHdr+tRows+sRow+dRows+'</tbody></table>'+
-      '<div class="report-section" style="margin-top:24px;"><h4>AI 分析</h4><p style="white-space:pre-wrap;line-height:1.8;">'+_esc(data.analysis||'暂无')+'</p></div>'+
+      aiSection+
+      '<div class="report-section" style="margin-top:24px;"><h4>综合对比结论</h4><p style="white-space:pre-wrap;line-height:1.8;">'+_esc(data.analysis||'暂无')+'</p></div>'+
       '<div style="margin-top:20px;display:flex;gap:8px;"><button class="action-btn share-report-btn">分享报告</button><button class="action-btn download-report-btn">下载报告</button><button class="action-btn secondary print-btn">打印</button></div>';
   }
 

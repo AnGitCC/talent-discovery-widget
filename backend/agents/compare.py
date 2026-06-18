@@ -1,4 +1,5 @@
 """Compare Agent — side-by-side multi-candidate comparison."""
+import json, re
 from agents.base import Agent
 from llm.prompts import COMPARE_SYSTEM
 from data.talent_store import get_store
@@ -45,12 +46,65 @@ class CompareAgent(Agent):
   等级: {md.get('grade', '?')}
 """
 
-        user_msg = f"比较上下文: {context}\n\n{profiles_text}\n\n请生成对比分析报告。"
+        user_msg = f"比较上下文: {context}\n\n{profiles_text}\n\n请生成JSON格式的对比分析报告。"
         response = self.ask(user_msg)
+
+        # Parse structured JSON from LLM response
+        analysis = self._parse_compare_json(response, profiles)
 
         return {
             "employee_ids": employee_ids,
             "profiles": profiles,
-            "comparison_text": response,
+            "comparison_text": analysis.get("overall_comparison", ""),
+            "per_person": analysis.get("per_person", []),
             "context": context,
         }
+
+    def _parse_compare_json(self, response: str, profiles: list) -> dict:
+        """Parse the LLM JSON response, falling back gracefully."""
+        try:
+            data = json.loads(response)
+        except json.JSONDecodeError:
+            m = re.search(r'```(?:json)?\s*\n?(.*?)\n?```', response, re.DOTALL)
+            if m:
+                try:
+                    data = json.loads(m.group(1))
+                except json.JSONDecodeError:
+                    data = {}
+            else:
+                m2 = re.search(r'\{.*\}', response, re.DOTALL)
+                if m2:
+                    try:
+                        data = json.loads(m2.group())
+                    except json.JSONDecodeError:
+                        data = {}
+                else:
+                    data = {}
+
+        overall = data.get("overall_comparison", response[:300])
+
+        per_person = []
+        llm_profiles = data.get("profiles", [])
+        for i, p in enumerate(profiles):
+            name = p.get("姓名", "")
+            if i < len(llm_profiles):
+                lp = llm_profiles[i]
+                per_person.append({
+                    "name": name,
+                    "strengths": lp.get("strengths", []),
+                    "weaknesses": lp.get("weaknesses", []),
+                    "comprehensive_score": lp.get("comprehensive_score", 0),
+                    "positioning": lp.get("positioning", ""),
+                    "recommendation": lp.get("recommendation", ""),
+                })
+            else:
+                per_person.append({
+                    "name": name,
+                    "strengths": [],
+                    "weaknesses": [],
+                    "comprehensive_score": 0,
+                    "positioning": "",
+                    "recommendation": "",
+                })
+
+        return {"overall_comparison": overall, "per_person": per_person}
