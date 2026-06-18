@@ -13,6 +13,15 @@ from router import route, IntentResult
 
 
 # ── Helpers ──
+_CNS = {"一":1,"二":2,"两":2,"三":3,"四":4,"五":5,"六":6,"七":7,"八":8,"九":9,"十":10}
+def _parse_num(text, default=None):
+    """Parse '3个/三个/前3/前三' → int. Handles Arabic + Chinese numerals."""
+    m = _re.search(r'(\d+)\s*(?:个|位|人|名)?', text)
+    if m: return int(m.group(1))
+    m = _re.search(r'([一二两三四五六七八九十])\s*(?:个|位|人|名)?', text)
+    if m: return _CNS.get(m.group(1), default)
+    return default
+
 def _comma_list(value, max_items=None):
     """Split a comma-separated string into a cleaned list."""
     items = [x.strip() for x in str(value or "").split(",") if x.strip()]
@@ -56,13 +65,8 @@ async def _handle_position_to_person(ctx, params, user_text, ids):
 
     # Parse user-specified top_n from text
     top_n = int(params.get("top_n", 10))
-    _m = _re.search(r'(前|只要|找|要)\s*(\d+)\s*(个|位|人|名)', user_text)
-    if _m:
-        top_n = int(_m.group(2))
-    else:
-        _m = _re.search(r'(\d+)\s*(个|位|人|名)', user_text)
-        if _m:
-            top_n = int(_m.group(1))
+    _pn = _parse_num(user_text)
+    if _pn: top_n = _pn
 
     result = MatchAgent().match_position_to_person(position_name=pos_name, top_n=top_n)
     candidates = result.get("candidates", [])
@@ -95,15 +99,15 @@ async def _handle_position_to_person(ctx, params, user_text, ids):
     yield {"type": "actions", "actions": ["对比选中", "导出Excel"]}
     yield {"type": "done"}
 
-    # Auto-compare: if user said "对比前N" in the same search query, auto-trigger compare
+    # Auto-compare: "对比前三/前3个" → auto-trigger
     if candidates:
-        _cm = _re.search(r'对比\s*前\s*(\d+)\s*(个|位|人|名)', user_text)
+        _cm = _re.search(r'对比\s*前?\s*(\d+|[一二两三四五六七八九十])\s*(个|位|人|名)?', user_text)
         if _cm:
-            compare_n = int(_cm.group(1))
+            cn = _cm.group(1)
+            compare_n = int(cn) if cn.isdigit() else _CNS.get(cn, 2)
             compare_n = min(compare_n, len(candidates))
             if compare_n >= 2:
-                compare_ids = [c.get("id") for c in candidates[:compare_n]]
-                async for _msg in _handle_compare(ctx, params, user_text, compare_ids):
+                async for _msg in _handle_compare(ctx, params, user_text, [c.get("id") for c in candidates[:compare_n]]):
                     yield _msg
 
 

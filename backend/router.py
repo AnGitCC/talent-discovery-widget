@@ -12,6 +12,18 @@ if str(_backend_dir) not in sys.path:
 
 from llm.backend import get_llm
 
+_CN_DIGIT = {"一":1,"二":2,"两":2,"三":3,"四":4,"五":5,"六":6,"七":7,"八":8,"九":9,"十":10}
+_DIGIT_PAT = r'(\d+|[一二两三四五六七八九十])'  # matches "3" or "三"
+
+
+def _parse_num(text: str, default: int = 2) -> int:
+    """Parse '3个/三个/前3/前三' → int. Handles both Arabic and Chinese numerals."""
+    m = re.search(r'(\d+)\s*(?:个|位|人|名)?', text)
+    if m: return int(m.group(1))
+    m = re.search(r'([一二两三四五六七八九十])\s*(?:个|位|人|名)?', text)
+    if m: return _CN_DIGIT.get(m.group(1), default)
+    return default
+
 
 ROUTER_PROMPT = """你是意图路由器。分析用户输入，返回精准JSON。
 
@@ -56,16 +68,12 @@ def quick_match(text: str, ctx) -> IntentResult | None:
     """Ultra-fast keyword match — actions first, then search."""
     t = text.strip()
 
-    # ── COMPARE always wins — "对比"/"比较" is unambiguous ──
+    # ── COMPARE always wins ──
     if "对比" in t or "比较" in t:
         if ctx and ctx.cached_candidates:
             ids = [c.get("id") for c in ctx.cached_candidates[:10]]
-            if "前" in t:
-                m = re.search(r'前\s*(\d+)', t)
-                n = int(m.group(1)) if m else 2
-                ids = ids[:n]
-            elif "选中" in t:
-                ids = ctx.selected_ids if ctx.selected_ids else ids[:2]
+            n = _parse_num(t, default=2)
+            ids = ids[:n]
             return IntentResult(intent="compare", params={"ids": ids}, confidence=0.9)
         return IntentResult(intent="compare", params={}, confidence=0.85)
 
@@ -83,11 +91,11 @@ def quick_match(text: str, ctx) -> IntentResult | None:
     if "导出" in t or "下载" in t:
         return IntentResult(intent="export", params={"format": "xlsx"}, confidence=0.95)
 
-    # ── SEARCH: only if not action ──
+    # ── SEARCH ──
     search_words = ["找", "搜索", "有没有", "推荐", "候选人", "人才", "帮我",
                     "谁是", "哪个", "哪位", "只要", "就要", "给我"]
     has_search = any(w in t for w in search_words)
-    bare_qty = bool(re.search(r'(?:^|\s)\d+\s*(?:个|位|人|名)', t))
+    bare_qty = bool(re.search(r'(?:^|\s)(' + _DIGIT_PAT + r')\s*(?:个|位|人|名)', t))
 
     if has_search or bare_qty:
         pos = t
@@ -95,7 +103,7 @@ def quick_match(text: str, ctx) -> IntentResult | None:
             prev = pos
             pos = re.sub(r'^(帮我|我要|请|帮忙|给我|找|搜索|推荐|有没有|只要|要|谁是|哪个|哪位|给我)\s*', '', pos).strip()
             if pos == prev: break
-        pos = re.sub(r'\s*\d+\s*(个|位|人|名)\s*', ' ', pos).strip()
+        pos = re.sub(r'\s*' + _DIGIT_PAT + r'\s*(个|位|人|名)\s*', ' ', pos).strip()
         pos = re.sub(r'有\s*\d+\s*年\s*经验的?\s*', '', pos).strip()
         if not pos or len(pos) < 2: pos = "人才"
         return IntentResult(intent="position_to_person", params={"position": pos}, confidence=0.9)
