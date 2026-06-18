@@ -298,8 +298,8 @@ class SiliconFlowBackend:
         if not self.api_key:
             raise ValueError("SILICONFLOW_API_KEY not set.")
 
-        # Use route_model for quick routing, chat_model for analysis
         model = kwargs.pop("model", self.chat_model)
+        _timeout = kwargs.pop("timeout", 30)
         resp = httpx.post(
             f"{self.base_url}/chat/completions",
             headers={"Authorization": f"Bearer {self.api_key}"},
@@ -310,11 +310,47 @@ class SiliconFlowBackend:
                 "max_tokens": kwargs.pop("max_tokens", 2048),
                 **kwargs,
             },
-            timeout=30,
+            timeout=_timeout,
         )
         resp.raise_for_status()
         data = resp.json()
         return data["choices"][0]["message"]["content"]
+
+    def chat_stream(self, messages: list[dict], **kwargs):
+        """Streaming chat — yields text deltas as they arrive. For long analysis."""
+        import httpx, json
+        if not self.api_key:
+            raise ValueError("SILICONFLOW_API_KEY not set.")
+
+        model = kwargs.pop("model", self.chat_model)
+        _timeout = kwargs.pop("timeout", 120)
+        with httpx.stream(
+            "POST",
+            f"{self.base_url}/chat/completions",
+            headers={"Authorization": f"Bearer {self.api_key}"},
+            json={
+                "model": model,
+                "messages": messages,
+                "temperature": kwargs.pop("temperature", 0.1),
+                "max_tokens": kwargs.pop("max_tokens", 4096),
+                "stream": True,
+                **kwargs,
+            },
+            timeout=_timeout,
+        ) as resp:
+            resp.raise_for_status()
+            for line in resp.iter_lines():
+                if line.startswith("data: "):
+                    chunk = line[6:].strip()
+                    if chunk == "[DONE]":
+                        break
+                    try:
+                        d = json.loads(chunk)
+                        delta = d["choices"][0].get("delta", {}).get("content", "")
+                        if delta:
+                            yield delta
+                    except (json.JSONDecodeError, KeyError, IndexError):
+                        continue
 
     def embed(self, texts: list[str]) -> list[list[float]]:
         import hashlib

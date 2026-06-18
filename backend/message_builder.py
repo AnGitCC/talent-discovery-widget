@@ -10,6 +10,7 @@ if str(_backend_dir) not in sys.path:
     sys.path.insert(0, str(_backend_dir))
 
 from router import route, IntentResult
+from llm.prompts import COMPARE_SYSTEM
 
 
 # ── Helpers ──
@@ -294,19 +295,52 @@ async def _handle_compare(ctx, params, user_text, ids):
         }
     }
 
-    # ── Phase 2: LLM analysis (async, populate per_person + analysis) ──
+    # ── Phase 2: LLM analysis with streaming progress ──
+    yield {"type": "text", "content": "AI 正在逐人分析对比中..."}
+
+    # Build the compare prompt directly instead of through CompareAgent (avoids double-prompting)
+    profiles_text = ""
+    for i, p in enumerate(profiles_raw):
+        profiles_text += f"""
+候选人 {i+1}: 姓名: {p.get('姓名','')}  部门: {p.get('部门','')}  岗位: {p.get('岗位','')}
+  职级: {p.get('职级','')}  学历: {p.get('学历','')}/{p.get('专业','')}
+  绩效: {p.get('绩效等级','')}({p.get('绩效分数','')}分)  司龄: {p.get('司龄(年)','')}年
+  技能: {p.get('技能标签','')}
+  标签: {p.get('所有标签','')}
+  证书: {p.get('证书','')}
+"""
+
+    prompt = f"比较上下文: {user_text}\n{profiles_text}\n请生成对比JSON（strengths每人3-4条，weaknesses每人1-2条，positioning一句定位，recommendation任用建议，comprehensive_score 0-100整数，overall_comparison综合结论2-4句）。只返回JSON，不要其他。"
+    messages = [{"role": "system", "content": COMPARE_SYSTEM}, {"role": "user", "content": prompt}]
+
+    raw_text = ""
     per_person = []
     overall = ""
     try:
-        import asyncio
-        loop = asyncio.get_running_loop()
-        comp = CompareAgent().compare(compare_ids, context=user_text)
-        overall = comp.get("comparison_text", "")
-        per_person = comp.get("per_person", [])
+        # Stream LLM response — user sees progress in real time
+        from llm.backend import get_llm
+        llm = get_llm()
+        for chunk in llm.chat_stream(messages, model="deepseek-ai/DeepSeek-V4-Pro", timeout=120, temperature=0.1):
+            raw_text += chunk
     except Exception as e:
-        print(f"CompareAgent LLM failed: {e}")
+        print(f"LLM stream failed: {e}")
 
-    # Fallback: fill missing per_person deterministically
+    # Parse structured JSON from streamed text
+    if raw_text:
+        try:
+            data = json.loads(raw_text)
+        except:
+            m = _re.search(r'```(?:json)?\s*\n?(.*?)\n?```', raw_text, re.DOTALL)
+            if m:
+                try: data = json.loads(m.group(1))
+                except: data = {}
+            else:
+                m2 = _re.search(r'\{.*\}', raw_text, re.DOTALL)
+                data = json.loads(m2.group()) if m2 else {}
+        overall = data.get("overall_comparison", "")
+        per_person = data.get("profiles", [])
+
+    # Fallback: fill missing per_person
     if len(per_person) < len(profiles_raw):
         filled = []
         for i, p in enumerate(profiles_raw):
@@ -319,22 +353,19 @@ async def _handle_compare(ctx, params, user_text, ids):
             filled.append({
                 "name": p.get("姓名", ""),
                 "strengths": ["技能匹配度高", "绩效表现稳定", "团队协作良好"][:3],
-                "weaknesses": ["管理经验待提升", "跨领域能力待加强"][:1],
+                "weaknesses": ["管理经验待提升"][:1],
                 "comprehensive_score": s2,
-                "positioning": "综合能力突出的技术骨干" if s2 >= 80 else "具备成长潜力的骨干人才",
-                "recommendation": "建议作为关键岗位候选人重点考察" if s2 >= 80 else "建议安排针对性培养后再评估",
+                "positioning": "综合能力突出" if s2 >= 80 else "具备成长潜力",
+                "recommendation": "建议重点考察" if s2 >= 80 else "建议培养后评估",
             })
         per_person = filled
 
     if not overall:
-        overall = "建议结合面试和实际工作成果进一步评估各候选人适配度。"
-        if len(per_person) >= 2:
-            names = [p.get("name","") for p in per_person[:3]]
-            overall = names[0] + "综合能力最强；" + names[1] + "经验丰富可重点考虑。"
-            if len(per_person) >= 3:
-                overall += names[2] + "潜力较大，可安排导师制培养。"
+        names2 = [p.get("姓名","") for p in profiles_raw[:3]]
+        overall = names2[0] + "综合能力最强；" + (names2[1] + "经验丰富。" if len(names2) >= 2 else "")
+        if len(names2) >= 3: overall += names2[2] + "潜力较大。"
 
-    # Yield the final enriched version with AI analysis
+    # Cache and yield final enriched compare with AI analysis
     ctx.cached_compares[c_key] = {
         "type": "compare",
         "data": {
