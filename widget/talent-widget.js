@@ -246,8 +246,11 @@ class TalentWidget {
     '.info-row{font-size:0.8125rem;color:#1D1D1F;margin:2px 0;display:flex;justify-content:space-between;padding:3px 0;border-bottom:0.5px solid #f2f2f7}.info-label{color:#86868B;flex-shrink:0}.info-val{color:#1D1D1F;font-weight:500;text-align:right}'+
     '.action-btn{display:inline-block;padding:6px 14px;border-radius:8px;font-size:11px;color:#fff;background:#22c55e;border:none;margin:4px}'+
     'tr:hover td{background:rgba(34,197,94,.05)!important}';
-  var html='<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>人才对比报告</title><style>'+css+'</style></head><body><div style="background:#fff;border-radius:16px;padding:32px;box-shadow:0 2px 12px rgba(0,0,0,.04)">'+fp.innerHTML+'</div></body></html>';
-  var b=new Blob([html],{type:'text/html;charset=utf-8'});var u=URL.createObjectURL(b);var a=document.createElement('a');a.href=u;a.download='人才对比报告.html';document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(function(){URL.revokeObjectURL(u);},5000);this._addBotMsg('报告已生成下载'); }
+  var isDetail=!!fp.querySelector('.report-header')&&!fp.querySelector('.cmp-table');
+  var fname=isDetail?'人才全景履历.html':'人才对比报告.html';
+  var fnameShort=isDetail?'全景履历':'对比报告';
+  var html='<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>'+fnameShort+'</title><style>'+css+'</style></head><body><div style="background:#fff;border-radius:16px;padding:32px;box-shadow:0 2px 12px rgba(0,0,0,.04)">'+fp.innerHTML+'</div></body></html>';
+  var b=new Blob([html],{type:'text/html;charset=utf-8'});var u=URL.createObjectURL(b);var a=document.createElement('a');a.href=u;a.download=fname;document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(function(){URL.revokeObjectURL(u);},5000);this._addBotMsg(isDetail?'全景履历已生成下载':'报告已生成下载'); }
   _printReport(){var fp=this.shadow.getElementById('fullscreen-panel');var css=':root{--green:#22c55e;--green-dark:#16a34a;--green-ghost:rgba(34,197,94,0.08);--text:#1D1D1F;--text-secondary:#86868B;--bg:#FAFAFA;--border:#E5E5EA;--border-light:#F2F2F7;--white:#fff}*{box-sizing:border-box;margin:0;padding:0}body{font-family:Inter,-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;max-width:1100px;margin:32px auto;padding:0 20px;color:#1D1D1F;line-height:1.7;background:#fff}'+
     'h3{font-weight:600;font-size:1.15rem;margin-bottom:20px;color:#1D1D1F}'+
     '.cmp-table{width:100%;border-collapse:collapse;font-size:0.8125rem;table-layout:fixed;margin-bottom:16px}'+
