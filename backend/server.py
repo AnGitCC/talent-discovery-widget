@@ -135,7 +135,6 @@ routes = [
     Route("/api/health", health),
     Route("/api/debug", debug_status),
     Route("/api/export/{session_id}", export_excel),
-    Route("/api/pdf", pdf_export, methods=["POST"]),
     WebSocketRoute("/ws/{session_id}", ws_endpoint),
 ]
 
