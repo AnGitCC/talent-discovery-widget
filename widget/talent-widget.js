@@ -2,7 +2,7 @@
 class TalentWidget {
   constructor() {
     var s = document.currentScript;
-    this.wsUrl = (s && s.dataset && s.dataset.ws) || 'wss://talent-discovery-widget.onrender.com/ws/default';
+    this.wsUrl = (s && s.dataset && s.dataset.ws) || 'wss://talent.atgoertek.xyz/ws/default';
     this.sessionId = 'sess_' + Math.random().toString(36).slice(2, 10);
     this.ws = null; this.isOpen = false; this.messages = []; this._wsConnected = false;
     this._inject(); this._connect();
