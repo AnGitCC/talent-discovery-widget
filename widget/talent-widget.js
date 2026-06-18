@@ -182,7 +182,7 @@ class TalentWidget {
     var secHdr='<tr class="cmp-section-header"><td class="cmp-label">基本信息</td>'+profiles.map(function(){return'<td></td>';}).join('')+'</tr>';
     var attrs=[{k:'department',l:'部门'},{k:'position',l:'岗位'},{k:'level',l:'职级'},{k:'education',l:'学历'},{k:'major',l:'专业'},{k:'performance',l:'绩效'},{k:'tenure',l:'司龄(年)'}];
     var tRows=attrs.map(function(a,i){var cls=i%2===0?'cmp-row-even':'cmp-row-odd';return'<tr class="'+cls+'"><td class="cmp-label">'+a.l+'</td>'+profiles.map(function(p){return'<td>'+_esc(String(p[a.k]||'—'))+'</td>';}).join('')+'</tr>';}).join('');
-    var sRow='<tr class="cmp-row-odd"><td class="cmp-label">技能标签</td>'+profiles.map(function(p){return'<td class="cmp-chips-cell">'+(p.skills||[]).slice(0,8).map(function(s){return'<span class="chip">'+_esc(s)+'</span>';}).join('')+'</td>';}).join('')+'</tr>';
+    var sRow='<tr class="cmp-row-odd"><td class="cmp-label">技能标签</td>'+profiles.map(function(p){return'<td class="cmp-chips-cell">'+_chips((p.skills||[]).slice(0,8))+'</td>';}).join('')+'</tr>';
     var dRows='';
     if (hasDims) { dRows='<tr class="cmp-section-header"><td class="cmp-label">维度评分</td>'+profiles.map(function(){return'<td></td>';}).join('')+'</tr>'; dRows+=allDimKeys.map(function(k,i){var cls=i%2===0?'cmp-row-even':'cmp-row-odd';return'<tr class="'+cls+'"><td class="cmp-label">'+_esc(k)+'</td>'+profiles.map(function(p){var v=(p.dimensions||{})[k];return'<td><span style="font-weight:600;color:'+(v>=80?'var(--green)':v>=60?'#F59E0B':'#EF4444')+'">'+(v!=null?v:'—')+'</span></td>';}).join('')+'</tr>';}).join(''); }
 
@@ -237,7 +237,7 @@ class TalentWidget {
     '.cmp-section-header td{background:#f2f2f7!important;font-weight:600;font-size:10px;color:#86868B;text-transform:uppercase;letter-spacing:.05em;padding:8px 12px!important}'+
     '.cmp-score-cell{font-size:1.5rem;font-weight:300;color:#22c55e}.cmp-chips-cell{line-height:2}'+
     '.grade-badge{display:inline-block;font-weight:600;font-size:10px;padding:2px 6px;border-radius:3px;text-transform:uppercase}.grade-badge.S{background:#22c55e;color:#fff}.grade-badge.A{background:rgba(34,197,94,.08);color:#16a34a;border:0.5px solid rgba(34,197,94,.3)}.grade-badge.B{background:transparent;color:#1D1D1F;border:0.5px solid #E5E5EA}.grade-badge.C{background:transparent;color:#86868B;border:0.5px solid #f2f2f7}'+
-    '.card-chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}.chip{font-size:10px;color:#86868B;border:0.5px solid #E5E5EA;border-radius:10px;padding:2px 7px;white-space:nowrap;display:inline-block;margin:1px}'+
+    '.card-chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}.chip{font-size:13px;border-radius:10px;padding:2px 7px;white-space:nowrap;display:inline-block;margin:1px}'+
     '.card-avatar-wrap{width:60px;flex-shrink:0;padding:8px 6px;display:flex;align-items:center;justify-content:center;background:rgba(34,197,94,.04)}.card-avatar{width:48px;height:60px;border-radius:8px;object-fit:cover;background:#f2f2f7}.cmp-avatar{width:56px;height:70px;border-radius:10px;object-fit:cover;background:rgba(255,255,255,.25);display:block;margin:0 auto 6px}.card-body{flex:1;min-width:0;padding:12px 14px}.card-top-inner{display:flex;align-items:flex-start;justify-content:space-between;min-width:0}'+
     '.report-section{margin-top:20px}.report-section h4{font-weight:500;font-size:.75rem;color:#86868B;text-transform:uppercase;margin-bottom:8px}.report-section p,.report-section li{font-size:.875rem;color:#1D1D1F;line-height:1.7}.report-section ul{padding-left:16px}.report-section li{margin-bottom:4px}'+
     '.report-header{display:flex;gap:20px;align-items:stretch;margin-bottom:20px}.report-avatar{width:130px;height:160px;border-radius:14px;object-fit:cover;object-position:center top;background:rgba(34,197,94,.04)}.report-grade{text-align:center;flex-shrink:0}.report-info{flex:1;display:flex;flex-direction:column;justify-content:center}.report-name{font-size:1.5rem;font-weight:600;color:#1D1D1F}.report-meta{font-size:.875rem;color:#86868B;margin-top:4px}.report-score{font-size:2.5rem;font-weight:300;color:#22c55e}'+
@@ -250,7 +250,19 @@ class TalentWidget {
 /* ── Helpers ── */
 function _esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function _avatarUrl(id){return 'https://api.dicebear.com/9.x/personas/svg?seed='+(id||'default')+'&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf';}
-function _chips(a){return(a||[]).map(function(x){return'<span class="chip">'+_esc(x)+'</span>';}).join('');}
+function _tagColor(tag){
+  // Hash tag name to hue for consistent color per tag
+  var h=0;for(var i=0;i<tag.length;i++){h=((h<<5)-h)+tag.charCodeAt(i);h|=0;}
+  var hue=Math.abs(h)%360;
+  // Secondary hash for saturation variation (50-75%) — vibrant pastels
+  var s2=Math.abs((h*31+7)%26)+50;
+  var bg='hsl('+hue+','+s2+'%,85%)';
+  var t='hsl('+hue+','+(s2+10)+'%,24%)';
+  var b='hsl('+hue+','+s2+'%,60%)';
+  return {bg:bg,t:t,b:b};
+  return {bg:bg,t:t,b:b};
+}
+function _chips(a){return(a||[]).map(function(x){var c=_tagColor(x);return'<span class="chip" style="background:'+c.bg+';color:'+c.t+';border-color:'+c.b+'">'+_esc(x)+'</span>';}).join('');}
 function _li(a){return(a||[]).map(function(s){return'<li>'+_esc(s)+'</li>';}).join('')||'<li>暂无数据</li>';}
 function _dimFallback(d){if(!d||!Object.keys(d).length)return'';return'<div class="report-section"><h4>匹配度各维度</h4>'+Object.entries(d).map(function(e){return'<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:0.5px solid var(--border-light);"><span style="font-size:0.8125rem;color:var(--text);">'+_esc(e[0])+'</span><span style="font-size:0.8125rem;font-weight:600;color:var(--green);">'+e[1]+'</span></div>';}).join('')+'</div>';}
 function _radarSVG(d,Sz){
@@ -263,7 +275,7 @@ function _radarSVG(d,Sz){
   for(var i=0;i<N;i++){var a=Math.PI*2*i/N-Math.PI/2,r=R*(v[i]||0)/100;svg+='<circle cx="'+(x+r*Math.cos(a)).toFixed(1)+'" cy="'+(y+r*Math.sin(a)).toFixed(1)+'" r="2.5" fill="#22c55e"/>';}
   return svg+'</svg>';
 }
-function _icebergSection(t,d){var h='<h4>'+t+'</h4>';for(var k in d){var v=d[k];if(Array.isArray(v))h+='<div style="margin-top:6px;"><div style="font-size:0.75rem;color:var(--text-secondary);">'+_esc(k)+'</div><div class="card-chips">'+v.map(function(x){return'<span class="chip">'+_esc(String(x))+'</span>';}).join('')+'</div></div>';else if(typeof v==='object'&&v!==null){h+='<div style="margin-top:6px;"><div style="font-size:0.75rem;color:var(--text-secondary);">'+_esc(k)+'</div>';for(var kk in v)h+='<div class="info-row">'+_esc(kk)+': '+(v[kk]||'—')+'</div>';h+='</div>';}else h+='<div class="info-row">'+_esc(k)+': '+(v||'—')+'</div>';}return h;}
+function _icebergSection(t,d){var h='<h4>'+t+'</h4>';for(var k in d){var v=d[k];if(Array.isArray(v))h+='<div style="margin-top:6px;"><div style="font-size:0.75rem;color:var(--text-secondary);">'+_esc(k)+'</div><div class="card-chips">'+_chips(v.map(String))+'</div></div>';else if(typeof v==='object'&&v!==null){h+='<div style="margin-top:6px;"><div style="font-size:0.75rem;color:var(--text-secondary);">'+_esc(k)+'</div>';for(var kk in v)h+='<div class="info-row">'+_esc(kk)+': '+(v[kk]||'—')+'</div>';h+='</div>';}else h+='<div class="info-row">'+_esc(k)+': '+(v||'—')+'</div>';}return h;}
 
 /* ── Inline CSS ── */
 const _CSS = ':host{--green:#22c55e;--green-dark:#16a34a;--green-light:#86efac;--green-ghost:rgba(34,197,94,0.08);--white:#FFFFFF;--bg:#FAFAFA;--text:#1D1D1F;--text-secondary:#86868B;--border:#E5E5EA;--border-light:#F2F2F7;--shadow-sm:0 1px 3px rgba(0,0,0,0.04);--shadow-md:0 4px 16px rgba(0,0,0,0.08);--shadow-lg:0 8px 32px rgba(0,0,0,0.12);--radius-sm:8px;--radius-md:12px;--radius-lg:16px;--radius-full:980px;--font:Inter,-apple-system,BlinkMacSystemFont,sans-serif;--transition:0.3s cubic-bezier(0.25,0.1,0.25,1);all:initial}*{box-sizing:border-box;margin:0;padding:0;font-family:var(--font)}'+
@@ -288,7 +300,7 @@ const _CSS = ':host{--green:#22c55e;--green-dark:#16a34a;--green-light:#86efac;-
 '.result-card .card-left{flex:1;min-width:0}.result-card .badge-row{display:flex;align-items:center;gap:6px;margin-bottom:4px}'+
 '.grade-badge{display:inline-block;font-weight:600;font-size:10px;padding:2px 6px;border-radius:3px;text-transform:uppercase}.grade-badge.S{background:var(--green);color:#FFF}.grade-badge.A{background:var(--green-ghost);color:var(--green-dark);border:0.5px solid rgba(34,197,94,0.3)}.grade-badge.B{background:transparent;color:var(--text);border:0.5px solid var(--border)}.grade-badge.C{background:transparent;color:var(--text-secondary);border:0.5px solid var(--border-light)}'+
 '.card-name{font-size:13px;font-weight:600;color:var(--text)}.card-score{font-size:22px;font-weight:300;color:var(--green)}.card-meta{font-size:11px;color:var(--text-secondary);margin-top:2px}'+
-'.card-chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}.chip{font-size:10px;color:var(--text-secondary);border:0.5px solid var(--border);border-radius:10px;padding:2px 7px;white-space:nowrap}'+
+'.card-chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}.chip{font-size:13px;border-radius:10px;padding:2px 7px;white-space:nowrap;border:0.5px solid transparent}'+
 '.card-actions{display:flex;flex-direction:column;gap:4px;flex-shrink:0;margin-left:8px}.card-btn{background:transparent;border:0.5px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--text-secondary);cursor:pointer;white-space:nowrap;transition:all 0.15s ease}.card-btn:hover{border-color:var(--green);color:var(--green)}'+
 '.action-bar{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap}.action-btn{background:var(--green);border:none;border-radius:var(--radius-sm);padding:6px 14px;font-size:11px;color:#FFF;cursor:pointer;font-weight:500;transition:background 0.15s ease}.action-btn:hover{background:var(--green-dark)}.action-btn.secondary{background:transparent;border:0.5px solid var(--border);color:var(--text-secondary)}.action-btn.secondary:hover{border-color:var(--green);color:var(--green)}'+
 '.input-bar{display:flex;gap:8px;padding:10px 14px;border-top:0.5px solid var(--border);background:var(--white);flex-shrink:0}.input-bar input{flex:1;padding:8px 12px;font-size:13px;border:1px solid var(--border);border-radius:20px;outline:none;background:var(--bg);transition:border-color 0.2s ease}.input-bar input:focus{border-color:var(--green)}.input-bar .send-btn{width:36px;height:36px;background:var(--green);border:none;border-radius:50%;color:#FFF;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background 0.15s ease}.input-bar .send-btn:hover{background:var(--green-dark)}.input-bar .send-btn:disabled{opacity:0.5;cursor:not-allowed}'+

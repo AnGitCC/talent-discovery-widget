@@ -105,6 +105,7 @@ routes = [
     Route("/", root),
     Mount("/widget", app=StaticFiles(directory=WIDGET_DIR)),
     Route("/demo", demo),
+    Mount("/demo/static", app=StaticFiles(directory=DEMO_DIR)),
     Route("/architecture", architecture),
     Route("/api/health", health),
     Route("/api/debug", debug_status),
