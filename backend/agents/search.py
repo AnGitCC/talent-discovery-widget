@@ -25,13 +25,23 @@ class SearchAgent(Agent):
           6. LLM: re-rank top candidates
         """
         # Step 1: Parse NL → conditions via LLM
-        parsed = self.ask_json(query)
+        try:
+            parsed = self.ask_json(query)
+        except Exception:
+            parsed = {}
         conditions = parsed.get("conditions", [])
         search_mode = parsed.get("search_mode", "semantic")
         reasoning = parsed.get("reasoning", "")
 
-        # Step 2: Apply conditions + hard filters
-        filtered_df = build_condition_dataframe_queries(self.store.df, conditions)
+        # Step 2: Soft filter — narrow with conditions only if they produce results
+        filtered_df = self.store.df.copy()
+        if conditions:
+            try:
+                narrow = build_condition_dataframe_queries(self.store.df, conditions)
+                if len(narrow) >= 3:
+                    filtered_df = narrow
+            except Exception:
+                pass
         filtered_df = apply_hard_filters(filtered_df)
 
         # Step 3: Keyword matching (primary — always works)
@@ -69,20 +79,11 @@ class SearchAgent(Agent):
                     "vector_score": vector_scores.get(eid, normalized),
                 })
 
-        # Step 6: LLM ranking
-        if candidates and len(candidates) > 1:
-            try:
-                from engine.llm_rank import llm_rank
-                candidates, _ = llm_rank(self.llm, query, candidates, top_n=min(top_n, len(candidates)))
-            except Exception:
-                pass
-
-        # Fill in grade for any candidate without one
-        from engine.llm_rank import compute_match_grade
+        # Fill in grade without LLM re-rank (keyword score is sufficient)
         for c in candidates:
-            if "grade" not in c or not c.get("grade"):
-                score = c.get("keyword_score", 50)
-                c["grade"] = compute_match_grade(score)
+            score = c.get("keyword_score", 50)
+            c["grade"] = "S" if score >= 90 else "A" if score >= 80 else "B" if score >= 65 else "C"
+            c["keyword_score"] = score
 
         return {
             "candidates": candidates[:top_n],
@@ -90,4 +91,5 @@ class SearchAgent(Agent):
             "conditions_used": conditions,
             "search_mode": search_mode,
             "reasoning": reasoning,
+            "raw_conditions": conditions,
         }

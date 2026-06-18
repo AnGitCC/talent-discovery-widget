@@ -52,9 +52,9 @@ async def _handle_clarify(ctx, params, user_text, ids):
 async def _handle_position_to_person(ctx, params, user_text, ids):
     from agents.match import MatchAgent
     pos_name = params.get("position", user_text)
-    yield {"type": "text", "content": f"正在搜索匹配「{pos_name}」的候选人..."}
+    yield {"type": "text", "content": "正在搜索匹配「" + pos_name + "」的候选人..."}
 
-    # Parse user-specified top_n: "前10个", "只要5个", "找3个", "6个", "8人"
+    # Parse user-specified top_n from text (e.g. "前10个", "只要5个", "找3个", "6个", "8人")
     top_n = int(params.get("top_n", 10))
     _m = _re.search(r'(前|只要|找|要)\s*(\d+)\s*(个|位|人|名)', user_text)
     if _m:
@@ -73,7 +73,7 @@ async def _handle_position_to_person(ctx, params, user_text, ids):
         yield {"type": "done"}
         return
 
-    yield {"type": "text", "content": f"找到 {len(candidates)} 位匹配候选人："}
+    yield {"type": "text", "content": "找到 " + str(len(candidates)) + " 位匹配候选人："}
     for c in candidates:
         p = c.get("profile", {})
         yield {
