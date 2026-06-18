@@ -24,8 +24,8 @@ BAILIAN_EMBED_MODEL = "tongyi-embedding-vision-plus-2026-03-06"
 # SiliconFlow (primary) — set SILICONFLOW_API_KEY env var
 SILICONFLOW_API_KEY = ""
 SILICONFLOW_BASE_URL = "https://api.siliconflow.cn/v1"
-SILICONFLOW_CHAT_MODEL = "Pro/deepseek-ai/DeepSeek-V3"  # fast + smart routing/compare
-SILICONFLOW_ROUTE_MODEL = "deepseek-ai/DeepSeek-V3"     # lightweight intent routing
+SILICONFLOW_CHAT_MODEL = "deepseek-ai/DeepSeek-V4-Pro"     # analysis: report/compare/llm_rank
+SILICONFLOW_ROUTE_MODEL = "deepseek-ai/DeepSeek-V4-Flash"   # routing: intent detection
 
 # AIHub (internal) — fallback
 AIHUB_BASE_URL = "https://aihub-api.goertek.com:30080/v1"
