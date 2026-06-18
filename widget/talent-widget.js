@@ -37,7 +37,7 @@ class TalentWidget {
     $('send-btn').addEventListener('click', function() { self._send(); });
     $('msg-input').addEventListener('keydown', function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); self._send(); } });
     $('messages').addEventListener('click', function(e) {
-      var db = e.target.closest('.detail-btn'); if (db && db.dataset.id) { self._wsSend({ type: 'action', action: 'report', ids: [db.dataset.id] }); return; }
+      var db = e.target.closest('.detail-btn'); if (db && db.dataset.id) { self._showLoading('正在生成候选人分析报告...'); self._wsSend({ type: 'action', action: 'report', ids: [db.dataset.id] }); return; }
       var ab = e.target.closest('.action-btn'); if (ab) { self._handleActionClick(ab.dataset.action); return; }
       var sc = e.target.closest('.suggestion-chip'); if (sc) { $('msg-input').value = sc.dataset.suggest; self._send(); }
     });
@@ -84,10 +84,16 @@ class TalentWidget {
   }
 
   _handleActionClick(action) {
-    if (action.indexOf('对比选中')>=0) { var checked=this.shadow.querySelectorAll('.card-checkbox:checked'); var ids=Array.from(checked).map(function(cb){return cb.dataset.id;}).filter(Boolean); if(ids.length>=2)this._wsSend({type:'action',action:'compare',ids:ids}); else this._addBotMsg('请至少勾选2位候选人'); }
-    else if (action.indexOf('对比')>=0) { var n=parseInt((action.match(/\d+/)||['2'])[0])||2; var ids=this.messages.filter(function(m){return m.cardData;}).slice(0,n).map(function(m){return m.cardData.id;}).filter(Boolean); if(ids.length>=2)this._wsSend({type:'action',action:'compare',ids:ids}); }
+    if (action.indexOf('对比选中')>=0) { var checked=this.shadow.querySelectorAll('.card-checkbox:checked'); var ids=Array.from(checked).map(function(cb){return cb.dataset.id;}).filter(Boolean); if(ids.length>=2){this._showLoading('正在对比候选人...');this._wsSend({type:'action',action:'compare',ids:ids});} else this._addBotMsg('请至少勾选2位候选人'); }
+    else if (action.indexOf('对比')>=0) { var n=parseInt((action.match(/\d+/)||['2'])[0])||2; var ids=this.messages.filter(function(m){return m.cardData;}).slice(0,n).map(function(m){return m.cardData.id;}).filter(Boolean); if(ids.length>=2){this._showLoading('正在对比候选人...');this._wsSend({type:'action',action:'compare',ids:ids});} }
     else if (action.indexOf('导出')>=0) this._triggerDownload();
     else if (action.indexOf('返回')>=0) this.close();
+  }
+
+  _showLoading(text) {
+    if (!this._isFullscreen()) this.toggleFullscreen();
+    this.shadow.getElementById('fullscreen-panel').innerHTML =
+      '<div class="loading-container"><div class="loading-spinner"><div class="spinner-ring"></div></div><p class="loading-text">'+_esc(text||'正在加载...')+'</p><p class="loading-hint">AI 正在分析数据，请稍候</p></div>';
   }
 
   _addSuggestions(items) { this._app('<div class="action-bar" style="margin-left:34px;">'+items.map(function(a){return '<button class="chip suggestion-chip" data-suggest="'+_esc(a)+'">'+_esc(a)+'</button>';}).join('')+'</div>'); }
@@ -97,8 +103,8 @@ class TalentWidget {
 
   _handleMessage(msg) {
     var self=this, M={
-      text: function(){self._removeTyping();self._addBotMsg(msg.content);},
-      card: function(){self._removeTyping();self._addCard(msg.data);},
+      text: function(){self._addBotMsg(msg.content);},
+      card: function(){self._addCard(msg.data);},
       report: function(){self._removeTyping();if(!self._isFullscreen())self.toggleFullscreen();self._renderReport(msg.data);},
       compare: function(){self._removeTyping();if(!self._isFullscreen())self.toggleFullscreen();self._renderCompare(msg.data);},
       profile: function(){self._removeTyping();if(!self._isFullscreen())self.toggleFullscreen();self._renderProfile(msg.data);},
@@ -251,6 +257,7 @@ const _CSS = ':host{--green:#22c55e;--green-dark:#16a34a;--green-light:#86efac;-
 '.card-checkbox{accent-color:var(--green);cursor:pointer;flex-shrink:0}.result-card:has(.card-checkbox:checked){border-color:var(--green)!important;background:var(--green-ghost)!important}'+
 '.resize-grip-top{display:none;height:6px;background:linear-gradient(135deg,var(--green),#4ade80);cursor:ns-resize;flex-shrink:0;transition:background 0.15s ease}.floating .resize-grip-top{display:block}.resize-grip-top:hover{background:var(--green-dark)}'+
 '.resize-grip-right{display:none;width:6px;background:transparent;cursor:ew-resize;flex-shrink:0;transition:background 0.15s ease}.fullscreen .resize-grip-right{display:block}.resize-grip-right:hover{background:rgba(34,197,94,0.15)}'+
-'@keyframes float-pulse{0%,100%{box-shadow:0 4px 16px rgba(34,197,94,0.4)}50%{box-shadow:0 4px 28px rgba(34,197,94,0.6)}}@keyframes ring-pulse{0%,100%{transform:scale(1);opacity:0.4}50%{transform:scale(1.12);opacity:0}}';
+'@keyframes float-pulse{0%,100%{box-shadow:0 4px 16px rgba(34,197,94,0.4)}50%{box-shadow:0 4px 28px rgba(34,197,94,0.6)}}@keyframes ring-pulse{0%,100%{transform:scale(1);opacity:0.4}50%{transform:scale(1.12);opacity:0}}'+
+'.loading-container{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:300px;gap:16px}.loading-spinner{width:48px;height:48px;position:relative}.spinner-ring{width:48px;height:48px;border:3px solid var(--border-light);border-top-color:var(--green);border-radius:50%;animation:spin 0.8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.loading-text{font-size:0.9375rem;font-weight:500;color:var(--text)}.loading-hint{font-size:0.75rem;color:var(--text-secondary)}';
 
 (function() { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function() { new TalentWidget(); }); else new TalentWidget(); })();
