@@ -13,19 +13,29 @@ TEST_DATA_FILE = ROOT_DIR / "test_talent_data_400_cn.xlsx"
 DATA_PROVIDER = "excel"  # "excel" | "api"
 
 # LLM
-LLM_BACKEND = "bailian"  # "mock" | "aihub" | "bailian"
-AIHUB_BASE_URL = "https://aihub-api.goertek.com:30080/v1"
-AIHUB_API_KEY = ""
-AIHUB_MODEL = "Qwen3-VL-235B-A22B-Instruct"
+LLM_BACKEND = "siliconflow"  # "mock" | "aihub" | "bailian" | "siliconflow"
 
-# Alibaba Bailian (Dashscope) — set BAILIAN_API_KEY env var in production
+# Alibaba Bailian (Dashscope) — fallback, set BAILIAN_API_KEY env var
 BAILIAN_API_KEY = ""   # always read from env, never hardcode
 BAILIAN_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 BAILIAN_CHAT_MODEL = "qwen3.7-plus"
 BAILIAN_EMBED_MODEL = "tongyi-embedding-vision-plus-2026-03-06"
 
+# SiliconFlow (primary) — set SILICONFLOW_API_KEY env var
+SILICONFLOW_API_KEY = ""
+SILICONFLOW_BASE_URL = "https://api.siliconflow.cn/v1"
+SILICONFLOW_CHAT_MODEL = "Pro/deepseek-ai/DeepSeek-V3"  # fast + smart routing/compare
+SILICONFLOW_ROUTE_MODEL = "deepseek-ai/DeepSeek-V3"     # lightweight intent routing
+
+# AIHub (internal) — fallback
+AIHUB_BASE_URL = "https://aihub-api.goertek.com:30080/v1"
+AIHUB_API_KEY = ""
+AIHUB_MODEL = "Qwen3-VL-235B-A22B-Instruct"
+
 # Allow override via environment variables
 import os
+if _env_key := os.getenv("SILICONFLOW_API_KEY"):
+    SILICONFLOW_API_KEY = _env_key
 if _env_key := os.getenv("BAILIAN_API_KEY"):
     BAILIAN_API_KEY = _env_key
 

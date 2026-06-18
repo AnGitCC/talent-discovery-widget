@@ -1,7 +1,8 @@
-"""Pluggable LLM backend: Mock (dev) + AIHub (internal) + Bailian (Alibaba)."""
+"""Pluggable LLM backend: Mock (dev) + AIHub (internal) + Bailian (Alibaba) + SiliconFlow."""
 from typing import Protocol
 from utils.config import AIHUB_BASE_URL, AIHUB_API_KEY, AIHUB_MODEL
 from utils.config import BAILIAN_API_KEY, BAILIAN_BASE_URL, BAILIAN_CHAT_MODEL, BAILIAN_EMBED_MODEL
+from utils.config import SILICONFLOW_API_KEY, SILICONFLOW_BASE_URL, SILICONFLOW_CHAT_MODEL, SILICONFLOW_ROUTE_MODEL
 
 
 class LLMBackend(Protocol):
@@ -283,9 +284,58 @@ class BailianBackend:
         return vectors
 
 
+class SiliconFlowBackend:
+    """SiliconFlow (硅基流动) — fast, cheap LLM API."""
+
+    def __init__(self, base_url=None, api_key=None, chat_model=None, route_model=None):
+        self.base_url = base_url or SILICONFLOW_BASE_URL
+        self.api_key = api_key or SILICONFLOW_API_KEY
+        self.chat_model = chat_model or SILICONFLOW_CHAT_MODEL
+        self.route_model = route_model or SILICONFLOW_ROUTE_MODEL
+
+    def chat(self, messages: list[dict], **kwargs) -> str:
+        import httpx
+        if not self.api_key:
+            raise ValueError("SILICONFLOW_API_KEY not set.")
+
+        # Use route_model for quick routing, chat_model for analysis
+        model = kwargs.pop("model", self.chat_model)
+        resp = httpx.post(
+            f"{self.base_url}/chat/completions",
+            headers={"Authorization": f"Bearer {self.api_key}"},
+            json={
+                "model": model,
+                "messages": messages,
+                "temperature": kwargs.pop("temperature", 0.1),
+                "max_tokens": kwargs.pop("max_tokens", 2048),
+                **kwargs,
+            },
+            timeout=30,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        return data["choices"][0]["message"]["content"]
+
+    def embed(self, texts: list[str]) -> list[list[float]]:
+        import hashlib
+        # SiliconFlow doesn't offer free embedding — hash-based mock
+        DIM = 1024
+        vectors = []
+        for text in texts:
+            vec = []
+            for i in range(DIM):
+                h = hashlib.sha256(f"{i}:{text}".encode()).digest()
+                val = int.from_bytes(h[:4], 'big') / (2**32) * 2 - 1
+                vec.append(val)
+            vectors.append(vec)
+        return vectors
+
+
 def get_llm() -> LLMBackend:
     """Factory: return the configured LLM backend."""
     from utils.config import LLM_BACKEND
+    if LLM_BACKEND == "siliconflow":
+        return SiliconFlowBackend()
     if LLM_BACKEND == "bailian":
         return BailianBackend()
     if LLM_BACKEND == "aihub":

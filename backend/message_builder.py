@@ -95,6 +95,17 @@ async def _handle_position_to_person(ctx, params, user_text, ids):
     yield {"type": "actions", "actions": ["对比选中", "导出Excel"]}
     yield {"type": "done"}
 
+    # Auto-compare: if user said "对比前N" in the same search query, auto-trigger compare
+    if candidates:
+        _cm = _re.search(r'对比\s*前\s*(\d+)\s*(个|位|人|名)', user_text)
+        if _cm:
+            compare_n = int(_cm.group(1))
+            compare_n = min(compare_n, len(candidates))
+            if compare_n >= 2:
+                compare_ids = [c.get("id") for c in candidates[:compare_n]]
+                async for _msg in _handle_compare(ctx, params, user_text, compare_ids):
+                    yield _msg
+
 
 
 async def _handle_report(ctx, params, user_text, ids):
@@ -195,6 +206,19 @@ async def _handle_compare(ctx, params, user_text, ids):
     from agents.compare import CompareAgent
     import hashlib
     compare_ids = ids or params.get("ids", [])
+
+    # Handle "top-N" placeholder from router (LLM → "对比前3个" → ids:["top-3"])
+    resolved_ids = []
+    for cid in (compare_ids or []):
+        if isinstance(cid, str) and cid.startswith("top-"):
+            n = int(cid.split("-")[1])
+            cached_ids = [c.get("id") for c in (ctx.cached_candidates or [])]
+            resolved_ids = cached_ids[:n]
+            break
+        else:
+            resolved_ids.append(cid)
+    if resolved_ids:
+        compare_ids = resolved_ids
 
     if len(compare_ids) < 2:
         yield {"type": "text", "content": "请至少选择2名候选人进行对比（可以说'对比前两个'）"}
