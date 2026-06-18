@@ -174,6 +174,15 @@ class MockBackend:
             vectors.append(vec[:TARGET_DIM])
         return vectors
 
+    async def chat_stream(self, messages: list[dict], **kwargs):
+        """Mock streaming chat — yields full response from chat() as one chunk."""
+        import asyncio
+        text = self.chat(messages, **kwargs)
+        # Yield in small chunks to simulate streaming
+        for i in range(0, len(text), 20):
+            yield text[i:i+20]
+            await asyncio.sleep(0.01)
+
 
 class AIHubBackend:
     """Company AI Hub backend (Goertek aihub-api.goertek.com)."""
@@ -316,41 +325,42 @@ class SiliconFlowBackend:
         data = resp.json()
         return data["choices"][0]["message"]["content"]
 
-    def chat_stream(self, messages: list[dict], **kwargs):
-        """Streaming chat — yields text deltas as they arrive. For long analysis."""
-        import httpx, json
+    async def chat_stream(self, messages: list[dict], **kwargs):
+        """Async streaming chat — yields text deltas without blocking the event loop."""
+        import httpx
+        import json as _json
         if not self.api_key:
             raise ValueError("SILICONFLOW_API_KEY not set.")
 
         model = kwargs.pop("model", self.chat_model)
         _timeout = kwargs.pop("timeout", 120)
-        with httpx.stream(
-            "POST",
-            f"{self.base_url}/chat/completions",
-            headers={"Authorization": f"Bearer {self.api_key}"},
-            json={
-                "model": model,
-                "messages": messages,
-                "temperature": kwargs.pop("temperature", 0.1),
-                "max_tokens": kwargs.pop("max_tokens", 4096),
-                "stream": True,
-                **kwargs,
-            },
-            timeout=_timeout,
-        ) as resp:
-            resp.raise_for_status()
-            for line in resp.iter_lines():
-                if line.startswith("data: "):
-                    chunk = line[6:].strip()
-                    if chunk == "[DONE]":
-                        break
-                    try:
-                        d = json.loads(chunk)
-                        delta = d["choices"][0].get("delta", {}).get("content", "")
-                        if delta:
-                            yield delta
-                    except (json.JSONDecodeError, KeyError, IndexError):
-                        continue
+        async with httpx.AsyncClient(timeout=_timeout) as client:
+            async with client.stream(
+                "POST",
+                f"{self.base_url}/chat/completions",
+                headers={"Authorization": f"Bearer {self.api_key}"},
+                json={
+                    "model": model,
+                    "messages": messages,
+                    "temperature": kwargs.pop("temperature", 0.1),
+                    "max_tokens": kwargs.pop("max_tokens", 4096),
+                    "stream": True,
+                    **kwargs,
+                },
+            ) as resp:
+                resp.raise_for_status()
+                async for line in resp.aiter_lines():
+                    if line.startswith("data: "):
+                        chunk = line[6:].strip()
+                        if chunk == "[DONE]":
+                            break
+                        try:
+                            d = _json.loads(chunk)
+                            delta = d["choices"][0].get("delta", {}).get("content", "")
+                            if delta:
+                                yield delta
+                        except (_json.JSONDecodeError, KeyError, IndexError):
+                            continue
 
     def embed(self, texts: list[str]) -> list[list[float]]:
         import hashlib

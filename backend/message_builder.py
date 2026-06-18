@@ -320,7 +320,7 @@ async def _handle_compare(ctx, params, user_text, ids):
         # Stream LLM response — user sees progress in real time
         from llm.backend import get_llm
         llm = get_llm()
-        for chunk in llm.chat_stream(messages, model="deepseek-ai/DeepSeek-V4-Pro", timeout=120, temperature=0.1):
+        async for chunk in llm.chat_stream(messages, model="deepseek-ai/DeepSeek-V4-Pro", timeout=120, temperature=0.1):
             raw_text += chunk
     except Exception as e:
         print(f"LLM stream failed: {e}")
