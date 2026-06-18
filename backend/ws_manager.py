@@ -14,11 +14,18 @@ class SessionContext:
     cached_candidates: list[dict] = field(default_factory=list)
     selected_ids: list[str] = field(default_factory=list)
     fullscreen: bool = False
+    # Per-session result cache — avoid redundant AI calls
+    cached_reports: dict[str, dict] = field(default_factory=dict)
+    cached_compares: dict[str, dict] = field(default_factory=dict)
+    cached_profiles: dict[str, dict] = field(default_factory=dict)
 
     def add_message(self, role: str, content: str, msg_type: str = "text"):
         self.history.append({"role": role, "content": content, "type": msg_type})
         if len(self.history) > 20:
             self.history = self.history[-20:]
+
+    def compare_key(self, ids: list[str]) -> str:
+        return ",".join(sorted(ids))
 
 
 class WSManager:
