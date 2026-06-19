@@ -7,11 +7,11 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 
 # Data
 DATA_DIR = ROOT_DIR / "data"
-# Resolve test data file — try multiple paths for Render compatibility
-_p1 = ROOT_DIR / "test_talent_data_400_cn.xlsx"
-_p2 = ROOT_DIR / ".." / "test_talent_data_400_cn.xlsx"
-_p3 = Path(__file__).resolve().parent / ".." / "test_talent_data_400_cn.xlsx"
-_p4 = Path("/opt/render/project/src/test_talent_data_400_cn.xlsx")
+# Resolve test data file — try multiple paths
+_p1 = ROOT_DIR / "test_talent_data_1000.xlsx"
+_p2 = ROOT_DIR / ".." / "test_talent_data_1000.xlsx"
+_p3 = ROOT_DIR / "test_talent_data_1000.xlsx"
+_p4 = Path("/opt/render/project/src/test_talent_data_1000.xlsx")
 TEST_DATA_FILE = _p1
 for _p in [_p1, _p2, _p3, _p4]:
     if _p.exists():

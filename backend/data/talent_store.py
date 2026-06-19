@@ -32,9 +32,11 @@ class TalentStore:
             import traceback
             traceback.print_exc()
             self.records = []
-        self._id_to_index = {
-            str(r.get("工号", "")): i for i, r in enumerate(self.records)
-        }
+        self._id_to_index = {}
+        for i, r in enumerate(self.records):
+            eid = str(r.get("员工编码", r.get("工号", "")))
+            if eid and eid not in ("nan", "None", ""):
+                self._id_to_index[eid] = i
         # Build vector index if embedding function provided
         if embedding_fn is not None:
             self._build_embeddings(embedding_fn)

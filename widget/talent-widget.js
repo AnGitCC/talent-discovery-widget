@@ -26,7 +26,7 @@ class TalentWidget {
     '<div class="chat-panel-body" id="panel-body">' +
     '<div class="chat-column" id="chat-column"><div class="reconnect-banner" id="reconnect-banner" style="display:none">连接已断开，正在重连...</div><div class="messages-container" id="messages"></div>' +
     '<div class="input-bar"><input type="text" id="msg-input" placeholder="输入需求，如：帮我找高级产品经理..."><button class="send-btn" id="send-btn">&uarr;</button></div></div>' +
-    '<div class="resize-grip-right" id="grip-right" title="拖动调整宽度"></div>' +
+    '' +
     '<div class="fullscreen-panel" id="fullscreen-panel"></div></div></div>';
   }
   _bindEvents() {
@@ -37,7 +37,7 @@ class TalentWidget {
     $('send-btn').addEventListener('click', function() { self._send(); });
     $('msg-input').addEventListener('keydown', function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); self._send(); } });
     $('messages').addEventListener('click', function(e) {
-      var db = e.target.closest('.detail-btn'); if (db && db.dataset.id) { self._showLoading('正在生成候选人分析报告...'); self._wsSend({ type: 'action', action: 'report', ids: [db.dataset.id] }); return; }
+      var db = e.target.closest('.detail-btn'); if (db && db.dataset.id) { var eid = db.dataset.id; if(!self._isFullscreen())self.toggleFullscreen(); self.shadow.getElementById('fullscreen-panel').innerHTML = '<iframe src="/mtp/' + eid + '" style="width:100%;height:100%;border:none" onload="this.style.height=(this.contentDocument.body.scrollHeight+40)+\'px\'"></iframe>'; return; }
       var ab = e.target.closest('.action-btn'); if (ab) { self._handleActionClick(ab.dataset.action); return; }
       var sc = e.target.closest('.suggestion-chip'); if (sc) { $('msg-input').value = sc.dataset.suggest; self._send(); }
     });
@@ -47,13 +47,17 @@ class TalentWidget {
       var prt = e.target.closest('.print-btn'); if (prt) { self._printReport(); return; }
       var dl = e.target.closest('.download-report-btn'); if (dl) { self._printReport(); return; }
     });
-    var panel = $('chat-panel'), chatCol = $('chat-column'), dragging = false, startY = 0, startTop = 0, startX = 0, startW = 0;
-    $('grip-top').addEventListener('mousedown', function(e) { if (panel.classList.contains('fullscreen')) return; e.preventDefault(); dragging = true; startY = e.clientY; startTop = panel.offsetTop; });
-    $('grip-right').addEventListener('mousedown', function(e) { if (!panel.classList.contains('fullscreen')) return; e.preventDefault(); dragging = true; startX = e.clientX; startW = chatCol.offsetWidth; });
+    var panel = $('chat-panel'), chatCol = $('chat-column'), dragging = false, dragMode = null, startY = 0, startTop = 0, startX = 0, startW = 0;
+    $('grip-top').addEventListener('mousedown', function(e) { if (panel.classList.contains('fullscreen')) return; e.preventDefault(); dragging = true; dragMode = 'top'; startY = e.clientY; startTop = panel.offsetTop; });
+    $('chat-panel').addEventListener('mousedown', function(e) {
+      if (!panel.classList.contains('fullscreen')) return;
+      var rect = chatCol.getBoundingClientRect();
+      if (e.clientX > rect.right - 8 && e.clientX < rect.right + 8) { e.preventDefault(); dragging = true; dragMode = 'right'; startX = e.clientX; startW = chatCol.offsetWidth; }
+    });
     document.addEventListener('mousemove', function(e) {
       if (!dragging) return;
-      if (panel.classList.contains('fullscreen')) { var w = Math.max(200, Math.min(600, startW + (e.clientX - startX))); chatCol.style.flex = '0 0 ' + w + 'px'; chatCol.style.width = w + 'px'; chatCol.style.maxWidth = 'none'; }
-      else { var newTop = Math.max(50, Math.min(window.innerHeight - 200, startTop + (e.clientY - startY))); panel.style.top = newTop + 'px'; }
+      if (dragMode === 'top') { var newTop = Math.max(50, Math.min(window.innerHeight - 200, startTop + (e.clientY - startY))); panel.style.top = newTop + 'px'; }
+      else if (dragMode === 'right') { var w = Math.max(280, Math.min(800, startW + (e.clientX - startX))); chatCol.style.flex = '0 0 ' + w + 'px'; chatCol.style.width = w + 'px'; chatCol.style.maxWidth = 'none'; }
     });
     document.addEventListener('mouseup', function() { dragging = false; });
   }
@@ -75,7 +79,7 @@ class TalentWidget {
 
   _addCard(data) {
     var g = data.grade || 'B'; this.messages.push({ role: 'bot', cardData: data });
-    this._app('<div class="message"><div class="msg-avatar bot"><img class="btn-icon-img" src="/widget/avatar.png" alt="AI"></div><div class="result-card" data-id="'+(data.id||'')+'"><div class="card-top"><div class="card-avatar-wrap"><img class="card-avatar" src="'+_avatarUrl(data.id,data.gender)+'" alt="" onerror="this.style.display=\'none\'"><span class="card-score">'+(data.score||'')+'</span><span class="card-score-label">匹配度</span></div><div class="card-body"><div class="card-info"><div class="badge-row"><input type="checkbox" class="card-checkbox" data-id="'+(data.id||'')+'"><span class="grade-badge grade-'+g+'">'+g+'</span><span class="card-name">'+_esc(data.name||'')+'</span></div><div class="card-meta">'+_esc(data.department||'')+' · '+_esc(data.position||'')+' · '+_esc(data.level||'')+' · '+_esc(data.education||'')+' · '+_esc(data.performance||'')+'</div><div class="card-chips">'+_chips(data.skills)+_chips(data.tags)+'</div></div><div class="card-actions"><button class="card-btn detail-btn" data-id="'+(data.id||'')+'">人才画像</button></div></div>'+(data.reason?'<div style="font-size:11px;color:var(--text-secondary);margin-top:6px;">'+_esc(data.reason)+'</div>':'')+'</div></div></div>');
+    this._app('<div class="message"><div class="msg-avatar bot"><img class="btn-icon-img" src="/widget/avatar.png" alt="AI"></div><div class="result-card" data-id="'+(data.id||'')+'"><div class="card-top"><div class="card-avatar-wrap"><img class="card-avatar" src="'+(data.avatar||_avatarUrl(data.id,data.gender))+'" alt="" onerror="this.style.display=\'none\'"><span class="card-score">'+(data.score||'')+'</span><span class="card-score-label">匹配度</span></div><div class="card-body"><div class="card-info"><div class="badge-row"><input type="checkbox" class="card-checkbox" data-id="'+(data.id||'')+'"><span class="grade-badge grade-'+g+'">'+g+'</span><span class="card-name" style="font-size:14px">'+_esc(data.name||'')+'</span></div><div class="card-meta">'+_esc(data.department||'')+' · '+_esc(data.position||'')+' · '+_esc(data.level||'')+' · '+_esc(data.education||'')+' · '+_esc(data.performance||'')+'</div><div class="card-chips">'+_chips(data.skills)+_chips(data.tags)+'</div></div><div class="card-actions"><button class="card-btn detail-btn" data-id="'+(data.id||'')+'">人才画像</button></div></div>'+(data.reason?'<div style="font-size:11px;color:var(--text-secondary);margin-top:6px;">'+_esc(data.reason)+'</div>':'')+'</div></div></div>');
   }
 
   _addActions(actions) {
@@ -121,52 +125,13 @@ class TalentWidget {
   _showAiPending() { var fp=this.shadow.getElementById('fullscreen-panel'); var d=document.createElement('div'); d.className='ai-pending'; d.innerHTML='<div class="report-section" style="margin-top:20px"><p style="font-size:0.8125rem;color:var(--text-secondary);display:flex;align-items:center;gap:8px"><span class="spinner-ring" style="width:14px;height:14px;border-width:2px;display:inline-block"></span>AI 深度分析生成中，完成后自动刷新...</p></div>'; fp.appendChild(d); }
 
   _renderReport(data) {
-    var g=data.grade||'B', hasDims=data.dimensions&&Object.keys(data.dimensions).length>0;
-    // Info row helper
-    function _info(label, val) { return val ? '<div class="info-row"><span class="info-label">'+_esc(label)+'</span><span class="info-val">'+_esc(String(val))+'</span></div>' : ''; }
-    this.shadow.getElementById('fullscreen-panel').innerHTML =
-      '<div class="report-header"><img class="report-avatar" src="'+_avatarUrl(data.id,data.gender)+'" alt="" onerror="this.style.display=\'none\'"><div class="report-grade"><span class="grade-badge grade-'+g+'" style="font-size:1rem;padding:6px 14px;">'+g+'</span><div class="report-score">'+(data.score||'')+'</div><div style="font-size:0.75rem;color:var(--text-secondary)">综合评分</div></div>'+
-      '<div class="report-info"><div class="report-name">'+_esc(data.name||'')+'</div><div class="report-meta">'+_esc(data.department||'')+' · '+_esc(data.position||'')+' · '+_esc(data.level||'')+'</div>'+
-      '<div class="report-meta">'+_esc(data.education||'')+' / '+_esc(data.major||'')+' · 司龄'+(data.tenure||'')+'年 · 绩效'+_esc(data.performance||'')+'</div></div></div>'+
-
-      '<div class="detail-grid">'+
-        '<div class="detail-col"><h4>基本信息</h4>'+
-          _info('姓名',data.name)+_info('性别',data.gender)+_info('年龄',data.age)+_info('籍贯',data.native)+
-          _info('工龄(年)',data.tenure)+_info('工作地点',data.workplace)+
-        '</div>'+
-        '<div class="detail-col"><h4>组织信息</h4>'+
-          _info('部门',data.department)+_info('岗位',data.position)+_info('职级',data.level)+
-          _info('职等',data.level_num)+_info('主管',data.supervisor_name)+_info('下属数',data.subordinates)+
-        '</div>'+
-        '<div class="detail-col"><h4>学历背景</h4>'+
-          _info('学历',data.education)+_info('院校类型',data.school_type)+_info('专业',data.major)+
-        '</div>'+
-      '</div>'+
-
-      '<div class="report-section"><h4>技能标签</h4><div class="card-chips">'+_chips(data.skills)+'</div></div>'+
-      '<div class="report-section"><h4>人才标签</h4><div class="card-chips">'+_chips(data.tags)+'</div></div>'+
-
-      '<div class="detail-grid" style="margin-top:16px">'+
-        '<div class="detail-col"><h4>项目经验</h4>'+
-          _info('NPI项目数',data.npi_projects)+_info('量产项目数',data.mass_projects)+_info('管理改善项目',data.mgmt_projects)+
-          _info('工作领域',data.work_domain)+_info('跨部门经验',data.cross_dept)+
-        '</div>'+
-        '<div class="detail-col"><h4>证书与资质</h4>'+
-          _info('证书',data.certificates)+_info('导师',data.is_mentor)+_info('带徒人数',data.mentees)+
-          _info('GPS人员',data.is_gps)+_info('国际化人才',data.is_international)+_info('外派国家',data.overseas)+
-        '</div>'+
-        '<div class="detail-col"><h4>发展意愿</h4>'+
-          _info('是否愿意调岗',data.willing_transfer)+_info('感兴趣岗位',data.interested_position)+
-          _info('愿意跨部门',data.willing_cross_dept)+_info('愿意跨BU',data.willing_cross_bu)+
-          _info('近三年晋升',data.promotions_3y)+_info('绩效分数',data.performance_score)+
-        '</div>'+
-      '</div>'+
-
-      (hasDims?'<div class="report-section"><h4>匹配度各维度</h4><div id="report-chart" style="width:100%;max-width:500px;margin:0 auto;">'+_radarSVG(data.dimensions)+'</div></div>':_dimFallback(data.dimensions))+
-      '<div class="report-section"><h4>综合评估</h4><p>'+_esc(data.explanation||'暂无')+'</p></div>'+
-      '<div class="report-section" style="display:flex;gap:24px;"><div style="flex:1;"><h4>优势</h4><ul>'+_li(data.strengths)+'</ul></div><div style="flex:1;"><h4>待发展项</h4><ul>'+_li(data.weaknesses)+'</ul></div></div>'+
-      '<div class="report-section"><h4>发展建议</h4><ul>'+_li(data.suggestions)+'</ul></div>'+
-      '<div style="margin-top:20px;display:flex;gap:8px;"><button class="action-btn share-report-btn">分享报告</button><button class="action-btn download-report-btn">下载报告</button></div>';
+    this._removeTyping();
+    var fp = this.shadow.getElementById("fullscreen-panel");
+    var eid = data.id || data["员工编码"] || "";
+    if (!eid) { fp.innerHTML = "<p>无法加载人才画像</p>"; return; }
+    fp.innerHTML = '<iframe src="/mtp/' + eid + '?v=' + Date.now() + '" ' +
+      'style="width:100%;height:100%;border:none" ' +
+      'onload="this.style.height=(this.contentDocument.body.scrollHeight+40)+\'px\'"></iframe>';
   }
 
   _renderCompare(data) {
@@ -176,7 +141,7 @@ class TalentWidget {
     profiles.forEach(function(p){var d=p.dimensions||{};Object.keys(d).forEach(function(k){if(allDimKeys.indexOf(k)<0)allDimKeys.push(k);});});
     var hasDims=allDimKeys.length>0;
 
-    var hdr='<th class="cmp-label-th">属性</th>'+profiles.map(function(p){return'<th><img class="cmp-avatar" src="'+_avatarUrl(p.id,p.gender)+'" alt="" onerror="this.style.display=\'none\'"><div>'+_esc(p.name||'')+'</div></th>';}).join('');
+    var hdr='<th class="cmp-label-th">属性</th>'+profiles.map(function(p){return'<th><img class="cmp-avatar" src="'+(p.avatar||_avatarUrl(p.id,p.gender))+'" alt="" onerror="this.style.display=\'none\'"><div>'+_esc(p.name||'')+'</div></th>';}).join('');
     var gradeRow='<tr><td class="cmp-label">评级</td>'+profiles.map(function(p){return'<td><span class="grade-badge grade-'+(p.grade||'B')+'">'+(p.grade||'B')+'</span></td>';}).join('')+'</tr>';
     var scoreRow='<tr class="cmp-row-odd"><td class="cmp-label">综合评分</td>'+profiles.map(function(p){return'<td><span class="cmp-score-cell">'+_esc(p.score||'—')+'</span></td>';}).join('')+'</tr>';
     var radarRow='';
@@ -209,14 +174,7 @@ class TalentWidget {
       '<div style="margin-top:20px;display:flex;gap:8px;"><button class="action-btn share-report-btn">分享报告</button><button class="action-btn download-report-btn">下载报告</button></div>';
   }
 
-  _renderProfile(data) {
-    var iceberg=data.iceberg||{};
-    this.shadow.getElementById('fullscreen-panel').innerHTML =
-      '<h3 style="font-weight:600;font-size:1.25rem;color:var(--text);margin-bottom:16px;">'+_esc(data.name||'')+' — 人才全景画像</h3>'+
-      '<div class="profile-grid"><div>'+_icebergSection('水上 — 可见信息',iceberg['水上_可见']||{})+'</div>'+
-      '<div>'+_icebergSection('水面 — 核心能力',iceberg['水面_核心能力']||{})+'</div>'+
-      '<div>'+_icebergSection('水下 — 隐性特质',iceberg['水下_隐性特质']||{})+'</div></div>';
-  }
+  _renderProfile(data) { this._renderReport(data); }
 
   _connect() {
     this._reconnectAttempts=0; var url=this.wsUrl.replace(/\/ws\/default/,'/ws/'+this.sessionId); this.ws=new WebSocket(url); var self=this;
@@ -254,7 +212,7 @@ var self=this;setTimeout(function(){w.print();w.close();self._addBotMsg('报告�
 
 /* ── Helpers ── */
 function _esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function _avatarUrl(id,gender){var pool=gender==='女'?'f':'m';var count=pool==='f'?20:25;var h=0;for(var i=0;i<(id||'').length;i++){h=((h<<5)-h)+(id||'').charCodeAt(i);h|=0;}var n=(Math.abs(h)%count)+1;var ns=n<10?'0'+n:''+n;return '/widget/avatars/avatar-'+pool+'-'+ns+'.png';}
+function _avatarUrl(id,gender){var pool=gender==='女'?'f':'m';var count=pool==='f'?91:64;var h=0;for(var i=0;i<(id||'').length;i++){h=((h<<5)-h)+(id||'').charCodeAt(i);h|=0;}var n=(Math.abs(h)%count)+1;var ns=n<10?'00'+n:n<100?'0'+n:''+n;return '/widget/avatars/avatar-'+pool+'-'+ns+'.png';}
 /* 64-color palette — vivid pastel, each hue distinct. Same tag = same color (hash → index). */
 var _TAG_PALETTE=(function(){
   var families=[
@@ -317,11 +275,11 @@ const _CSS = ':host{--green:#22c55e;--green-dark:#16a34a;--green-light:#86efac;-
 '.panel-header .title{font-weight:600;font-size:13px}.panel-header .subtitle{font-size:10px;opacity:0.85}.panel-header .header-actions{display:flex;gap:6px}'+
 '.panel-header .header-btn{width:24px;height:24px;background:rgba(255,255,255,0.25);border:none;border-radius:5px;color:#FFF;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center}.panel-header .header-btn:hover{background:rgba(255,255,255,0.4)}'+
 '.chat-panel-body{display:flex;flex:1;overflow:hidden}.floating .chat-panel-body{flex-direction:column}.fullscreen .chat-panel-body{flex-direction:row;align-items:stretch}.fullscreen .chat-panel-body>*{flex-shrink:0}'+
-'.chat-column{display:flex;flex-direction:column;flex:1;min-width:0;overflow:hidden}.fullscreen .chat-column{flex:0 0 33.33%;min-width:280px;max-width:480px;border-right:0.5px solid var(--border)}'+
-'.messages-container{flex:1;overflow-y:auto;padding:14px;background:var(--bg);display:flex;flex-direction:column;gap:10px}.message{display:flex;gap:8px;align-items:flex-start}.message.user{justify-content:flex-end}'+
+'.chat-column{display:flex;flex-direction:column;flex:1;min-width:0;overflow:hidden}.fullscreen .chat-column{flex:0 0 35%;min-width:280px;max-width:none;border-right:0.5px solid var(--border)}'+
+'.messages-container{flex:1;overflow-y:auto;overflow-x:hidden;padding:14px;background:var(--bg);display:flex;flex-direction:column;gap:10px}.message{display:flex;gap:8px;align-items:flex-start}.message.user{justify-content:flex-end}'+
 '.message .msg-avatar{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#FFF;overflow:hidden}.message .msg-avatar.bot{background:var(--green)}.message .msg-avatar.user{background:#D1D1D6}'+
 '.message .msg-bubble{padding:10px 12px;border-radius:10px 10px 10px 4px;font-size:12.5px;line-height:1.55;color:var(--text);background:var(--white);box-shadow:var(--shadow-sm);max-width:80%}.message.user .msg-bubble{background:var(--green);color:#FFF;border-radius:10px 10px 4px 10px}'+
-'.result-card{background:var(--white);border-radius:10px;border:1px solid rgba(0,0,0,0.05);display:flex;overflow:hidden;transition:all 0.15s ease}.result-card:hover{border-color:rgba(34,197,94,0.12);box-shadow:0 2px 12px rgba(0,0,0,0.06)}.result-card .card-top{display:flex;flex:1;min-width:0}.result-card .card-body{flex:1;min-width:0;padding:14px 16px;display:flex;align-items:center;gap:14px}.result-card .card-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}.result-card .badge-row{display:flex;align-items:center;gap:8px;margin-bottom:0}'+
+'.result-card{background:var(--white);border-radius:10px;border:1px solid rgba(0,0,0,0.05);display:flex;overflow:hidden;transition:all 0.15s ease;width:100%;max-width:100%}.result-card:hover{border-color:rgba(34,197,94,0.12);box-shadow:0 2px 12px rgba(0,0,0,0.06)}.result-card .card-top{display:flex;flex:1;min-width:0}.result-card .card-body{flex:1;min-width:0;padding:14px 16px;display:flex;align-items:center;gap:14px}.result-card .card-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}.result-card .badge-row{display:flex;align-items:center;gap:8px;margin-bottom:0}'+
 '.grade-badge{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;font-weight:700;font-size:10px;text-transform:uppercase;flex-shrink:0}.grade-badge.S{background:#22C55E;color:#FFF}.grade-badge.A{background:rgba(34,197,94,0.08);color:#16A34A;border:1px solid rgba(34,197,94,0.25)}.grade-badge.B{background:rgba(100,100,100,0.06);color:#666}.grade-badge.C{color:var(--text-secondary)}'+
 '.card-name{font-size:14px;font-weight:600;color:var(--text)}.card-score{font-size:24px;font-weight:600;color:#22C55E;line-height:1}.card-score-label{font-size:10px;color:#86868B}.card-meta{font-size:11px;color:var(--text-secondary)}'+
 '.card-chips{display:flex;gap:6px;flex-wrap:wrap}.chip{font-size:10px;border-radius:8px;padding:3px 8px;white-space:nowrap;border:none;font-weight:500}'+
@@ -347,7 +305,7 @@ const _CSS = ':host{--green:#22c55e;--green-dark:#16a34a;--green-light:#86efac;-
 '.card-avatar-wrap{width:72px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding:14px 0 12px;gap:4px;background:linear-gradient(180deg,rgba(34,197,94,0.03) 0%,rgba(255,255,255,0) 100%)}.card-avatar{width:52px;height:65px;border-radius:10px;object-fit:cover;box-shadow:0 2px 6px rgba(0,0,0,0.12)}'+
 '.report-avatar{width:130px;height:160px;border-radius:14px;object-fit:cover;object-position:center top;flex-shrink:0}.cmp-avatar{width:56px;height:70px;border-radius:10px;object-fit:cover;box-shadow:0 2px 6px rgba(0,0,0,0.12);display:block;margin:0 auto 6px}'+
 '.resize-grip-top{display:none;height:6px;background:linear-gradient(135deg,var(--green),#4ade80);cursor:ns-resize;flex-shrink:0;transition:background 0.15s ease}.floating .resize-grip-top{display:block}.resize-grip-top:hover{background:var(--green-dark)}'+
-'.resize-grip-right{display:none;width:6px;background:transparent;cursor:ew-resize;flex-shrink:0;transition:background 0.15s ease}.fullscreen .resize-grip-right{display:block}.resize-grip-right:hover{background:rgba(34,197,94,0.15)}'+
+''+
 '@keyframes float-pulse{0%,100%{box-shadow:0 4px 16px rgba(34,197,94,0.4)}50%{box-shadow:0 4px 28px rgba(34,197,94,0.6)}}@keyframes ring-pulse{0%,100%{transform:scale(1);opacity:0.4}50%{transform:scale(1.12);opacity:0}}'+
 '.loading-container{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:300px;gap:16px}.loading-spinner{width:48px;height:48px;position:relative}.spinner-ring{width:48px;height:48px;border:3px solid var(--border-light);border-top-color:var(--green);border-radius:50%;animation:spin 0.8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.loading-text{font-size:0.9375rem;font-weight:500;color:var(--text)}.loading-hint{font-size:0.75rem;color:var(--text-secondary)}';
 

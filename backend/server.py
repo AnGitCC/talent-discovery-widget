@@ -17,6 +17,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 from backend.ws_manager import ws_manager
 from backend.message_builder import stream_response
+from backend.views import mtp_profile
 
 WIDGET_DIR = str(_project_dir / "widget")
 DEMO_DIR = str(_project_dir / "demo")
@@ -131,6 +132,7 @@ routes = [
     Mount("/widget", app=StaticFiles(directory=WIDGET_DIR)),
     Route("/demo", demo),
     Mount("/demo/static", app=StaticFiles(directory=DEMO_DIR)),
+    Route("/mtp/{eid}", mtp_profile),
     Route("/architecture", architecture),
     Route("/api/health", health),
     Route("/api/debug", debug_status),

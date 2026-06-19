@@ -29,6 +29,82 @@ def _comma_list(value, max_items=None):
     return items[:max_items] if max_items else items
 
 
+_history_cache = None
+
+def _get_history(eid):
+    """Read history sub-tables for ONE employee only — fast, targeted read."""
+    try:
+        import openpyxl
+        from utils.config import TEST_DATA_FILE
+        wb = openpyxl.load_workbook(str(TEST_DATA_FILE), read_only=True, data_only=True)
+        result = {}
+        for sheet_name in wb.sheetnames:
+            if not sheet_name.startswith('历史_'): continue
+            ws = wb[sheet_name]
+            headers = [str(ws.cell(row=1, column=c).value or '') for c in range(1, ws.max_column + 1)]
+            short = sheet_name.replace('历史_', '')
+            records = []
+            for r in range(2, ws.max_row + 1):
+                row_eid = str(ws.cell(row=r, column=1).value or '')
+                if row_eid == str(eid):
+                    rec = {}
+                    for ci, hdr in enumerate(headers):
+                        if hdr and hdr not in ('工号', '姓名'):
+                            val = ws.cell(row=r, column=ci+1).value
+                            rec[str(hdr)] = str(val) if val is not None else ''
+                    if rec: records.append(rec)
+            if records:
+                result[short] = records
+        wb.close()
+        return result
+    except Exception as exc:
+        print(f"[History] FAILED for {eid}: {exc}")
+        return {}
+
+
+def _avatar_for(eid, gender):
+    """Generate avatar path — same hash algorithm as frontend _avatarUrl."""
+    pool = 'f' if gender == '女' else 'm'
+    count = 91 if pool == 'f' else 64
+    h = 0
+    for ch in str(eid):
+        h = ((h << 5) - h) + ord(ch)
+        h |= 0  # truncate to 32-bit, same as JS
+    n = (abs(h) % count) + 1
+    return f"/widget/avatars/avatar-{pool}-{n:03d}.png"
+
+def _build_skills(p):
+    """Build skill tags from 1000-data fields."""
+    parts = []
+    if p.get("XPM领域") and p["XPM领域"] not in ("否","","nan"): parts.append(p["XPM领域"])
+    if p.get("曾工作领域及年限") and p["曾工作领域及年限"] not in ("否","","nan"): parts.append(p["曾工作领域及年限"])
+    if p.get("内部拓展师等级") and p["内部拓展师等级"] not in ("否","","nan"): parts.append(p["内部拓展师等级"])
+    if p.get("综合等级") and p["综合等级"] not in ("否","","nan"): parts.append(p["综合等级"])
+    if p.get("授课讲师等级") and p["授课讲师等级"] not in ("否","","nan"): parts.append(p["授课讲师等级"])
+    return parts[:5]
+
+def _build_tags(p):
+    """Build tag pills from 1000-data boolean/status fields."""
+    tags = []
+    bool_tags = [
+        ("关键人才","是"), ("国际化人才","是"), ("海外战略储备","是"),
+        ("海外工作","是"), ("Hipo人才","是"), ("精英MBA班","是"),
+        ("客户界面","是"), ("技委会成员","是"), ("数字化人才","是"),
+        ("是否工艺师","是"), ("复合型技师","是"), ("NPI技师","是"),
+        ("轮岗人员","是"), ("海外留学","是"),
+    ]
+    for field, val in bool_tags:
+        if str(p.get(field, "")).strip() == val:
+            tags.append(field)
+    # Add non-boolean tag-like fields
+    if p.get("G-Plan") and str(p.get("G-Plan")).strip() not in ("否","","nan"): tags.append("G-Plan")
+    if p.get("GPS角色") and str(p.get("GPS角色")).strip() not in ("否","","nan"): tags.append("GPS角色")
+    if p.get("当前关键角色") and str(p.get("当前关键角色")).strip() not in ("否","","nan"): tags.append(p["当前关键角色"])
+    if p.get("潜力等级") and str(p.get("潜力等级")).strip() not in ("否","","nan"): tags.append(p["潜力等级"])
+    if p.get("档位") and str(p.get("档位")).strip() not in ("否","","nan"): tags.append(p["档位"]+"档")
+    return tags[:5]
+
+
 def _fmt_score(score):
     """Format a numeric score to string, pass through otherwise."""
     return f"{score:.0f}" if isinstance(score, (int, float)) else str(score)
@@ -81,21 +157,24 @@ async def _handle_position_to_person(ctx, params, user_text, ids):
     yield {"type": "text", "content": "找到 " + str(len(candidates)) + " 位匹配候选人："}
     for c in candidates:
         p = c.get("profile", {})
+        eid = c.get("id", "")
+        g = p.get("性别", "")
         yield {
             "type": "card",
             "data": {
-                "id": c.get("id"),
+                "id": eid,
                 "name": p.get("姓名", ""),
-                "gender": p.get("性别", ""),
+                "gender": g,
+                "avatar": _avatar_for(eid, g),
                 "grade": c.get("grade", "B"),
                 "score": _fmt_score(c.get("llm_score", c.get("keyword_score", "-"))),
-                "department": p.get("部门", ""),
-                "position": p.get("岗位", ""),
+                "department": p.get("所在职位", ""),
+                "position": p.get("所在职位", ""),
                 "level": p.get("职级", ""),
-                "education": p.get("学历", ""),
-                "performance": p.get("绩效等级", ""),
-                "skills": _comma_list(p.get("技能标签"), 5),
-                "tags": _comma_list(p.get("所有标签"), 3),
+                "education": p.get("最高学历", ""),
+                "performance": p.get("绩效等级", p.get("档位", "")),
+                "skills": _build_skills(p),
+                "tags": _build_tags(p),
             }
         }
     yield {"type": "actions", "actions": ["对比选中", "导出Excel"]}
@@ -130,81 +209,50 @@ async def _handle_report(ctx, params, user_text, ids):
         yield {"type": "done"}
         return
 
+    name = profile.get('姓名', eid)
+
     # Check cache
     if eid in ctx.cached_reports:
-        yield {"type": "text", "content": f"已从缓存加载 {profile.get('姓名', eid)} 的报告"}
+        yield {"type": "text", "content": f"已从缓存加载 {name} 的报告"}
         yield ctx.cached_reports[eid]
         yield {"type": "done"}
         return
 
-    yield {"type": "text", "content": f"正在加载 {profile.get('姓名', eid)} 的详细档案..."}
+    yield {"type": "text", "content": f"正在加载 {name} 的详细档案..."}
 
-    # Deterministic score — no AI needed for detail page
-    seed = str(profile.get("工号", eid))
+    # ── Pass through ALL raw fields from Excel, plus computed fields ──
+    data = dict(profile)  # copy all raw fields
+    data["id"] = eid
+
+    # Deterministic score
+    seed = str(profile.get("员工编码", profile.get("编码", eid)))
     h = int(hashlib.md5(seed.encode()).hexdigest()[:4], 16)
     score = 70 + (h % 31)
-    if score >= 90: grade = "S"
-    elif score >= 80: grade = "A"
-    elif score >= 65: grade = "B"
-    else: grade = "C"
-    base = score
-    dims = {
-        "技能匹配": min(100, max(20, base + (h % 15) - 7)),
-        "经验匹配": min(100, max(20, base + ((h>>4) % 15) - 7)),
-        "绩效趋势": min(100, max(20, base + ((h>>8) % 15) - 7)),
-        "软性素质": min(100, max(20, base + ((h>>12) % 11) - 5)),
-        "发展潜力": min(100, max(20, base - ((h>>6) % 9) + 4)),
-    }
+    data["score"] = _fmt_score(score)
+    if score >= 90: data["grade"] = "S"
+    elif score >= 80: data["grade"] = "A"
+    elif score >= 65: data["grade"] = "B"
+    else: data["grade"] = "C"
 
-    # All data from Excel — zero AI cost
-    result = {
-        "type": "report",
-        "data": {
-            "id": eid,
-            "name": profile.get("姓名", ""),
-            "grade": grade,
-            "score": _fmt_score(score),
-            "gender": profile.get("性别", ""),
-            "age": profile.get("年龄", ""),
-            "department": profile.get("部门", ""),
-            "position": profile.get("岗位", ""),
-            "level": profile.get("职级", ""),
-            "level_num": profile.get("职等", ""),
-            "education": profile.get("学历", ""),
-            "school_type": profile.get("院校类型", ""),
-            "major": profile.get("专业", ""),
-            "workplace": profile.get("工作地点", ""),
-            "native": profile.get("籍贯标签", ""),
-            "tenure": profile.get("司龄(年)", ""),
-            "performance": profile.get("绩效等级", ""),
-            "performance_score": profile.get("绩效分数", ""),
-            "supervisor_name": profile.get("主管姓名", ""),
-            "subordinates": profile.get("直接下属数", ""),
-            "promotions_3y": profile.get("近三年晋升次数", ""),
-            "work_domain": profile.get("工作领域", ""),
-            "cross_dept": profile.get("跨部门经验", ""),
-            "npi_projects": profile.get("NPI项目数", ""),
-            "mass_projects": profile.get("量产项目数", ""),
-            "mgmt_projects": profile.get("管理改善项目数", ""),
-            "certificates": profile.get("证书", ""),
-            "is_mentor": profile.get("是否导师", ""),
-            "mentees": profile.get("带徒人数", ""),
-            "is_gps": profile.get("是否GPS人员", ""),
-            "is_international": profile.get("国际化人才", ""),
-            "overseas": profile.get("外派国家", ""),
-            "willing_transfer": profile.get("是否愿意调岗", ""),
-            "interested_position": profile.get("感兴趣岗位", ""),
-            "willing_cross_dept": profile.get("是否愿意跨部门", ""),
-            "willing_cross_bu": profile.get("是否愿意跨BU", ""),
-            "dimensions": dims,
-            "explanation": "基于员工档案数据和岗位体系匹配的综合评估",
-            "strengths": ["综合能力匹配度高", "绩效表现符合岗位要求"],
-            "weaknesses": ["建议持续关注职业发展规划"],
-            "suggestions": ["参加专业技能提升培训", "争取项目历练机会"],
-            "skills": _comma_list(profile.get("技能标签")),
-            "tags": _comma_list(profile.get("所有标签")),
-        }
-    }
+    # Avatar by gender
+    data["avatar"] = _avatar_for(eid, profile.get("性别", ""))
+
+    # Skills/tags as lists
+    data["skill_list"] = _comma_list(profile.get("技能标签"))
+    data["tag_list"] = _comma_list(profile.get("所有标签"))
+
+    # ── History: skip to avoid blocking (will add via pre-built cache later) ──
+    data["history"] = {}
+
+    # Convert numpy types to plain Python for JSON serialization
+    import numpy as np
+    for k, v in list(data.items()):
+        if isinstance(v, (np.integer,)): data[k] = int(v)
+        elif isinstance(v, (np.floating,)): data[k] = float(v)
+        elif isinstance(v, (np.bool_,)): data[k] = bool(v)
+
+    result = {"type": "report", "data": data}
+    print(f"[REPORT] Sending {len(data)} fields for {name}, has 姓名={bool(data.get('姓名'))}, history={len(data['history'])} modules")
     ctx.cached_reports[eid] = result
     yield result
     yield {"type": "actions", "actions": ["返回搜索"]}
@@ -254,7 +302,9 @@ async def _handle_compare(ctx, params, user_text, ids):
 
     profiles = []
     for i, p in enumerate(profiles_raw):
-        seed = str(p.get("工号", p.get("姓名", str(i))))
+        eid = str(p.get("员工编码", p.get("工号", "")))
+        g = p.get("性别", "")
+        seed = str(eid)
         h = int(hashlib.md5(seed.encode()).hexdigest()[:4], 16)
         score = 70 + (h % 31)
         if score >= 90: grade = "S"
@@ -270,16 +320,17 @@ async def _handle_compare(ctx, params, user_text, ids):
             "发展潜力": min(100, max(20, base - ((h>>6) % 9) + 4)),
         }
         profiles.append({
-            "id": p.get("工号", ""),
+            "id": eid,
             "name": p.get("姓名", ""),
-            "gender": p.get("性别", ""),
-            "department": p.get("部门", ""),
-            "position": p.get("岗位", ""),
+            "gender": g,
+            "avatar": _avatar_for(eid, g),
+            "department": p.get("所在职位", p.get("部门", "")),
+            "position": p.get("所在职位", p.get("岗位", "")),
             "level": p.get("职级", ""),
-            "education": p.get("学历", ""),
-            "major": p.get("专业", ""),
-            "performance": p.get("绩效等级", ""),
-            "tenure": p.get("司龄(年)", ""),
+            "education": p.get("最高学历", p.get("学历", "")),
+            "major": p.get("最高学历专业", p.get("专业", "")),
+            "performance": p.get("档位", p.get("绩效等级", "")),
+            "tenure": p.get("司龄", p.get("司龄(年)", "")),
             "skills": _comma_list(p.get("技能标签")),
             "tags": _comma_list(p.get("所有标签")),
             "grade": grade,
@@ -304,12 +355,12 @@ async def _handle_compare(ctx, params, user_text, ids):
     profiles_text = ""
     for i, p in enumerate(profiles_raw):
         profiles_text += f"""
-候选人 {i+1}: 姓名: {p.get('姓名','')}  部门: {p.get('部门','')}  岗位: {p.get('岗位','')}
-  职级: {p.get('职级','')}  学历: {p.get('学历','')}/{p.get('专业','')}
-  绩效: {p.get('绩效等级','')}({p.get('绩效分数','')}分)  司龄: {p.get('司龄(年)','')}年
-  技能: {p.get('技能标签','')}
-  标签: {p.get('所有标签','')}
-  证书: {p.get('证书','')}
+候选人 {i+1}: 姓名: {p.get('姓名','')}  所在职位: {p.get('所在职位','')}  岗位: {p.get('所在职位','')}
+  职级: {p.get('职级','')}  职等: {p.get('职等','')}  学历: {p.get('最高学历','')}/{p.get('最高学历专业','')}
+  档位: {p.get('档位','')}(总积分{p.get('总积分','')}分)  司龄: {p.get('司龄','')}年
+  曾工作领域: {p.get('曾工作领域及年限','')}
+  XPM领域: {p.get('XPM领域','')}  关键人才: {p.get('关键人才','')}
+  当前关键角色: {p.get('当前关键角色','')}
 """
 
     query_line = ""
@@ -357,8 +408,8 @@ async def _handle_compare(ctx, params, user_text, ids):
             if i < len(per_person) and per_person[i].get("comprehensive_score"):
                 filled.append(per_person[i])
                 continue
-            seed2 = str(p.get("工号", p.get("姓名", str(i))))
-            h2 = int(hashlib.md5(seed2.encode()).hexdigest()[:4], 16)
+            eid2 = str(p.get("员工编码", p.get("姓名", str(i))))
+            h2 = int(hashlib.md5(eid2.encode()).hexdigest()[:4], 16)
             s2 = 65 + (h2 % 31)
             filled.append({
                 "name": p.get("姓名", ""),

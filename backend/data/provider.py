@@ -54,7 +54,20 @@ class ExcelDataProvider(DataProvider):
         if not self.filepath.exists():
             raise FileNotFoundError(f"Talent data not found: {self.filepath}")
 
-        df = pd.read_excel(self.filepath, engine="openpyxl")
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            # 1000-row file has: row1=module headers, row2=field names, row3=descriptions
+            # 400-row file has: row1=field names
+            # Try header=1 first, fall back to header=0
+            df = pd.read_excel(self.filepath, sheet_name='主表', engine="openpyxl", header=1)
+            # If first row contains description-like text, skip it
+            desc_indicators = ['0-5 评分', '0-10 评分', '0-10 总分', '如：', '格式:',
+                              '高/中/普通', '1-3 九宫格', '逗号分隔']
+            if len(df) > 0:
+                row0 = df.iloc[0]
+                if any(isinstance(v, str) and any(d in str(v) for d in desc_indicators) for _, v in row0.items()):
+                    df = df.iloc[1:].reset_index(drop=True)
 
         # Normalize: fill NaN
         for col in df.select_dtypes(include="object").columns:
@@ -63,7 +76,15 @@ class ExcelDataProvider(DataProvider):
             df[col] = df[col].fillna(0)
 
         self._cache = df.to_dict(orient="records")
-        self._index = {str(r.get("工号", "")): r for r in self._cache}
+        self._index = {}
+        for r in self._cache:
+            eid = str(r.get("员工编码", r.get("工号", "")))
+            if eid and eid not in ("nan", "None", ""):
+                self._index[eid] = r
+        for r in self._cache:
+            eid = str(r.get("员工编码", r.get("工号", "")))
+            if eid and eid not in ("nan", "None", ""):
+                self._index[eid] = r
         return self._cache
 
     def fetch_by_id(self, employee_id: str) -> EmployeeRecord | None:

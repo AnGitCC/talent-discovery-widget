@@ -11,15 +11,17 @@ from typing import Any
 
 # Fields to search in, with their weight (higher = more important)
 SEARCH_FIELDS = {
-    "岗位": 5.0,        # position title is most relevant
+    "所在职位": 5.0,   # position title (1000 format)
+    "岗位": 5.0,        # position title (400 format)
     "技能标签": 4.0,     # skills
     "所有标签": 3.0,     # tags
     "证书": 3.0,        # certifications
-    "工作领域": 2.5,     # work domains
-    "专业": 2.0,        # major
-    "部门": 1.5,        # department
-    "学历": 1.0,        # education
-    "感兴趣岗位": 3.0,   # career interest
+    "曾工作领域及年限": 2.5, # work domains (1000 format)
+    "工作领域": 2.5,     # work domains (400 format)
+    "最高学历专业": 2.0, # major (1000 format)
+    "专业": 2.0,        # major (400 format)
+    "最高学历": 1.0,    # education (1000 format)
+    "学历": 1.0,        # education (400 format)
 }
 
 
@@ -117,7 +119,7 @@ def keyword_search(
     return results[:top_n]
 
 
-_ID_COLUMN_OPTIONS = ("工号", "id", "员工编号", "employee_id")
+_ID_COLUMN_OPTIONS = ("员工编码", "工号", "id", "员工编号", "employee_id")
 
 
 def _get_row_id(row) -> str:
