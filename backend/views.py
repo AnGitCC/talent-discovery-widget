@@ -9,7 +9,10 @@ async def mtp_profile(request):
         return HTMLResponse("<h2>Missing employee ID</h2>", status_code=400)
 
     import numpy as np
-    from data.talent_store import get_store
+    try:
+        from backend.data.talent_store import get_store
+    except ImportError:
+        from data.talent_store import get_store
     store = get_store()
     if store.df is None or len(store.records) == 0:
         store.load(embedding_fn=None)

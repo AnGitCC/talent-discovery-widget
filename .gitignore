@@ -3,6 +3,8 @@ __pycache__/
 *.pyo
 .env
 *.png
+!widget/avatars/*.png
+!widget/avatar.png
 *.tmp
 /tmp/
 /exports/
