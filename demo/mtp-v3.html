@@ -79,11 +79,87 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .st-ongoing{color:#D97706;font-weight:600;font-size:11px;background:#FEF3C7;padding:2px 8px;border-radius:8px}
 
 @media(max-width:1100px){.r3,.r4{grid-template-columns:1fr 1fr}}
+/* Action buttons */
+.action-btn{display:inline-flex;align-items:center;gap:4px;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:500;color:#FFF;background:var(--g);border:none;cursor:pointer;transition:all .15s}
+.action-btn:hover{opacity:.85;transform:translateY(-1px);box-shadow:0 4px 12px rgba(34,197,94,.3)}
+@media print {
+  .action-btn{display:none!important}
+  @page{size:A4 landscape;margin:8mm}
+  body{background:#FFF;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .main{max-width:100%;width:277mm;padding:0;gap:6px}
+  .sec{box-shadow:none;border:0.5px solid #E5E7EB;break-inside:avoid;border-radius:4px;page-break-inside:avoid}
+  .sec:last-child{page-break-inside:auto}
+  .r2,.r3,.r4{gap:6px;padding:0 8px 8px 8px}
+  .ph{padding:10px 12px;gap:10px}
+  .av{width:72px;height:90px;border-radius:8px}
+  .nm{font-size:20px}
+  .dp{font-size:12px}
+  .mm{font-size:11px;line-height:1.6}
+  .cl{padding:8px}
+  .tbl thead th{padding:5px 6px;font-size:10px}
+  .tbl td{padding:4px 6px;font-size:11px}
+  .sh{padding:7px 10px;font-size:13px}
+  .br{gap:4px;margin-top:6px;padding-top:6px}
+  .bd{padding:2px 8px;font-size:10px}
+  .tg{padding:3px 8px;font-size:10px}
+  .cw canvas{max-width:100%!important;height:auto!important}
+  .ch{font-size:12px;margin-bottom:6px}
+  .tx{font-size:12px;line-height:1.6}
+  .r2,.r3{display:grid}.r4{display:grid}
+}
 </style>
 </head>
 <body>
 <div class="main" id="main"></div>
 
+<script>
+/* Share — global, survives server-side template injection */
+function _shareMtp(){
+  var n=(window.D||{}).id||'员工', u=window.location.href;
+  if(navigator.clipboard){ navigator.clipboard.writeText(u).then(function(){ alert('链接已复制'); }); }
+  else if(navigator.share){ navigator.share({title:n+' MTP人才画像',url:u}).catch(function(){}); }
+  else{ prompt('复制链接分享：',u); }
+}
+/* Download — capture Chart.js canvases as images + new-window print */
+function _downloadMtp(){
+  var name=((window.D||{}).id||'员工')+'_MTP人才画像';
+  var liveMain=document.getElementById('main');
+  // Step 1: snapshot all live canvases to data URLs BEFORE cloning
+  var liveCanvases=liveMain.querySelectorAll('canvas');
+  var canvasData=[];
+  liveCanvases.forEach(function(cv){
+    try{ canvasData.push(cv.toDataURL('image/png')); }
+    catch(e){ canvasData.push(''); }
+  });
+  // Step 2: clone DOM
+  var clone=liveMain.cloneNode(true);
+  // Step 3: replace cloned canvases with <img> using snapshot data
+  var cloneCanvases=clone.querySelectorAll('canvas');
+  cloneCanvases.forEach(function(cv,i){
+    var dataUrl=canvasData[i];
+    if(!dataUrl) return;
+    var img=document.createElement('img');
+    img.src=dataUrl;
+    img.style.maxWidth='100%';
+    img.style.display='block';
+    img.style.margin='0 auto';
+    cv.parentNode.replaceChild(img,cv);
+  });
+  // Step 4: remove action buttons
+  var allBtns=clone.querySelectorAll('.action-btn');
+  allBtns.forEach(function(b){b.remove();});
+  var inner=clone.innerHTML;
+  // Fix avatar image paths
+  inner=inner.replace(/src="\/widget\/avatars\//g,'src="'+window.location.origin+'/widget/avatars/');
+  // Reuse page CSS
+  var css=(document.querySelector('style')||{}).textContent||'';
+  css+='.action-btn{display:none!important}';
+  var html='<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>'+name+'</title><style>'+css+'</style></head><body><div class="main">'+inner+'</div></body></html>';
+  var w=window.open('','_blank','width=900,height=700');
+  w.document.write(html);w.document.close();
+  setTimeout(function(){w.print();w.close();},900);
+}
+</script>
 <script>
 // Test data - G000002 夏慧 with history
 var D={
@@ -303,7 +379,11 @@ var D={
   html.push(
     '<div class="sec"><div class="sh">🚀 个人发展任用计划</div><div class="sb"><div class="tx">'+esc(s(D["发展任用计划"]))+'</div></div></div>');
 
-  document.getElementById("main").innerHTML=html.join("");
+  document.getElementById("main").innerHTML=html.join("")+
+    '<div style="text-align:center;margin:16px 0;display:flex;gap:10px;justify-content:center">'+
+    '<button class="action-btn" onclick="_shareMtp()">📤 分享报告</button>'+
+    '<button class="action-btn" onclick="_downloadMtp()">📥 下载报告</button>'+
+    '</div>';
 
   // ══════════ CHARTS ══════════
   Chart.defaults.font.family='-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif';Chart.defaults.font.size=12;

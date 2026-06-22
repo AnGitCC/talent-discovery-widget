@@ -171,7 +171,7 @@ class TalentWidget {
       '<table class="cmp-table"><thead><tr>'+hdr+'</tr></thead><tbody>'+gradeRow+scoreRow+radarRow+secHdr+tRows+sRow+dRows+'</tbody></table>'+
       aiSection+
       '<div class="report-section" style="margin-top:24px;"><h4>综合对比结论</h4><p style="white-space:pre-wrap;line-height:1.8;">'+_esc(data.analysis||'暂无')+'</p></div>'+
-      '<div style="margin-top:20px;display:flex;gap:8px;"><button class="action-btn share-report-btn">分享报告</button><button class="action-btn download-report-btn">下载报告</button></div>';
+      '<div style="margin-top:20px;display:flex;gap:8px;"><button class="action-btn share-report-btn">分享报告</button><button class="action-btn download-report-btn">下载报告</button><button class="action-btn print-btn">打印</button></div>';
   }
 
   _renderProfile(data) { this._renderReport(data); }
