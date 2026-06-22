@@ -82,9 +82,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 /* Action buttons */
 .action-btn{display:inline-flex;align-items:center;gap:4px;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:500;color:#FFF;background:var(--g);border:none;cursor:pointer;transition:all .15s}
 .action-btn:hover{opacity:.85;transform:translateY(-1px);box-shadow:0 4px 12px rgba(34,197,94,.3)}
+/* Print */
+@page{size:A4 landscape;margin:8mm}
 @media print {
   .action-btn{display:none!important}
-  @page{size:A4 landscape;margin:8mm}
   body{background:#FFF;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .main{max-width:100%;width:277mm;padding:0;gap:6px}
   .sec{box-shadow:none;border:0.5px solid #E5E7EB;break-inside:avoid;border-radius:4px;page-break-inside:avoid}
