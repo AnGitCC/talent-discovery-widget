@@ -17,6 +17,7 @@ async def mtp_profile(request):
         sys.path.insert(0, str(backend_dir))
 
         from data.talent_store import get_store
+        from data.history_cache import get_history, ensure_loaded
         store = get_store()
         if store.df is None or len(store.records) == 0:
             store.load(embedding_fn=None)
@@ -42,7 +43,9 @@ async def mtp_profile(request):
             h = ((h << 5) - h) + ord(ch)
             h |= 0
         data["avatar"] = f"/widget/avatars/avatar-{pool}-{(abs(h) % count) + 1:03d}.png"
-        data["history"] = {}
+        # Load history data from pre-built cache (O(1) lookup)
+        ensure_loaded()
+        data["history"] = get_history(eid)
 
         # Use project_dir for template path
         template_path = project_dir / "demo" / "mtp-v3.html"

@@ -152,6 +152,14 @@ try:
 except Exception as e:
     print(f"✗ Failed to load talent data: {e}")
 
+# ── Eager-build history index at startup ──
+from data.history_cache import load as load_history_cache
+try:
+    _history = load_history_cache()
+    print(f"✓ History index ready for {len(_history)} employees")
+except Exception as e:
+    print(f"✗ Failed to build history index: {e}")
+
 
 if __name__ == "__main__":
     import uvicorn

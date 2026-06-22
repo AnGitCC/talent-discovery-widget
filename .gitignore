@@ -12,4 +12,5 @@ __pycache__/
 *-broken.js
 *.css
 .embedding_cache.pkl
+.history_cache.pkl
 test_talent_data_10000_cn.xlsx

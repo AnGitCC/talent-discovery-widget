@@ -241,8 +241,10 @@ async def _handle_report(ctx, params, user_text, ids):
     data["skill_list"] = _comma_list(profile.get("技能标签"))
     data["tag_list"] = _comma_list(profile.get("所有标签"))
 
-    # ── History: skip to avoid blocking (will add via pre-built cache later) ──
-    data["history"] = {}
+    # ── History: load from pre-built cache (O(1) lookup) ──
+    from data.history_cache import get_history, ensure_loaded
+    ensure_loaded()
+    data["history"] = get_history(eid)
 
     # Convert numpy types to plain Python for JSON serialization
     import numpy as np
